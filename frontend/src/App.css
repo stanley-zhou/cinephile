@@ -99,7 +99,6 @@ body {
   animation: fadeInUp 0.8s ease-out 0.2s backwards;
 }
 
-/* ===== NAVIGATION ===== */
 .nav {
   background: var(--color-bg-elevated);
   border-bottom: 1px solid var(--color-border);
@@ -241,7 +240,6 @@ body {
   color: var(--color-text);
 }
 
-/* ===== MAIN CONTENT ===== */
 .main {
   flex: 1;
   padding: 3rem 2rem;
@@ -250,7 +248,6 @@ body {
   width: 100%;
 }
 
-/* ===== LOADING & EMPTY STATES ===== */
 .loader {
   text-align: center;
   padding: 4rem 2rem;
@@ -267,7 +264,6 @@ body {
   color: var(--color-text-dimmer);
 }
 
-/* ===== MOVIE GRID ===== */
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -338,7 +334,6 @@ body {
   color: var(--color-text-dimmer);
 }
 
-/* ===== STATS GRID ===== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -381,7 +376,6 @@ body {
   color: var(--color-text-dim);
 }
 
-/* ===== PERSON LIST ===== */
 .person-list {
   display: flex;
   flex-direction: column;
@@ -434,7 +428,6 @@ body {
   color: var(--color-text-dim);
 }
 
-/* ===== PAIRS GRID ===== */
 .pairs-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -485,7 +478,6 @@ body {
   letter-spacing: 0.1em;
 }
 
-/* ===== DECADE TIMELINE ===== */
 .decade-timeline {
   display: flex;
   flex-direction: column;
@@ -523,7 +515,6 @@ body {
   flex: 1;
 }
 
-/* ===== ANALYTICS GRID ===== */
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -592,7 +583,6 @@ body {
   font-size: 1.2rem;
 }
 
-/* ===== SEARCH RESULTS ===== */
 .search-results {
   display: flex;
   flex-direction: column;
@@ -626,7 +616,6 @@ body {
   margin-bottom: 1rem;
 }
 
-/* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -689,7 +678,6 @@ body {
   }
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .nav {
     flex-direction: column;

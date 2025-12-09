@@ -9,7 +9,6 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [searchInput, setSearchInput] = useState('')
 
-  // Fetch data based on active view
   useEffect(() => {
     fetchData(activeView)
   }, [activeView])
