@@ -72,6 +72,7 @@ function App() {
 
   const handleSearch = (view) => {
     if (searchInput.trim()) {
+      setActiveView(view)
       fetchData(view, searchInput)
     }
   }
