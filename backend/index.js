@@ -52,6 +52,8 @@ app.get('/movies/:title/genres', async (req, res) => {
     const query = `
       SELECT
         m.title,
+        m.rating,
+        m.num_votes,
         g.genre_name
       FROM Movies AS m
       JOIN MovieGenres AS mg ON m.movie_id = mg.movie_id
