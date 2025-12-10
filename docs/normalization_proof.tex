@@ -1,0 +1,166 @@
+\documentclass{article}
+\usepackage{amsmath} 
+\usepackage{csquotes}
+
+\begin{document}
+
+\section{Normalization: 3NF/BCNF Proof}
+\label{sec:normalization-bcnf}
+
+In this section we formally justify that each relation in our schema is in Boyce--Codd Normal Form (BCNF), and therefore also in Third Normal Form (3NF).
+
+
+\subsection*{Relations and Functional Dependencies}
+
+Below we list, for each relation $R$, its attributes, primary key(s), and the set of non-trivial FDs we assume for the cleaned dataset.
+
+\paragraph{\texttt{movies}}
+
+\[
+R_{\text{movies}}( \texttt{movie\_id}, \texttt{title}, \texttt{release\_year}, \texttt{runtime\_minutes}, \texttt{is\_adult}, \texttt{rating}, \texttt{num\_votes} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{movie\_id}\}$.
+    \item Non-trivial FDs:
+    \[
+    \texttt{movie\_id} \rightarrow \{\texttt{title}, \texttt{release\_year}, \texttt{runtime\_minutes}, \texttt{is\_adult}, \texttt{rating}, \texttt{num\_votes}\}.
+    \]
+\end{itemize}
+
+\paragraph{\texttt{genres}}
+
+\[
+R_{\text{genres}}( \texttt{genre\_id}, \texttt{genre\_name} )
+\]
+
+\begin{itemize}
+    \item Candidate keys: $\{\texttt{genre\_id}\}$ and $\{\texttt{genre\_name}\}$ (since \texttt{genre\_name} is unique).
+    \item Non-trivial FDs:
+    \[
+    \texttt{genre\_id} \rightarrow \texttt{genre\_name}, \qquad
+    \texttt{genre\_name} \rightarrow \texttt{genre\_id}.
+    \]
+\end{itemize}
+
+\paragraph{\texttt{movie\_genres}}
+
+\[
+R_{\text{movie\_genres}}( \texttt{movie\_id}, \texttt{genre\_id} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{movie\_id}, \texttt{genre\_id}\}$.
+    \item Non-trivial FDs: the only non-trivial FD is
+    \[
+    (\texttt{movie\_id}, \texttt{genre\_id}) \rightarrow \text{(all attributes)}.
+    \]
+\end{itemize}
+
+\paragraph{\texttt{people}}
+
+\[
+R_{\text{people}}( \texttt{person\_id}, \texttt{name}, \texttt{birth\_year}, \texttt{death\_year} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{person\_id}\}$.
+    \item Non-trivial FDs:
+    \[
+    \texttt{person\_id} \rightarrow \{\texttt{name}, \texttt{birth\_year}, \texttt{death\_year}\}.
+    \]
+\end{itemize}
+
+\paragraph{\texttt{roles}}
+
+\[
+R_{\text{roles}}( \texttt{movie\_id}, \texttt{person\_id}, \texttt{role} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{movie\_id}, \texttt{person\_id}, \texttt{role}\}$.
+    \item Non-trivial FDs:
+    \[
+    (\texttt{movie\_id}, \texttt{person\_id}, \texttt{role}) \rightarrow \text{(all attributes)}.
+    \]
+\end{itemize}
+
+\paragraph{\texttt{person\_known\_for}}
+
+\[
+R_{\text{person\_known\_for}}( \texttt{person\_id}, \texttt{movie\_id} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{person\_id}, \texttt{movie\_id}\}$.
+    \item Non-trivial FDs:
+    \[
+    (\texttt{person\_id}, \texttt{movie\_id}) \rightarrow \text{(all attributes)}.
+    \]
+\end{itemize}
+
+\paragraph{\texttt{market\_info}}
+
+\[
+R_{\text{market\_info}}( \texttt{tmdb\_id}, \texttt{imdb\_id}, \texttt{budget}, \texttt{revenue}, \texttt{popularity}, \texttt{overview}, \texttt{poster\_path} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{tmdb\_id}\}$.
+    \item In the cleaned dataset, there is at most one row per \texttt{tmdb\_id} and at most one row per \texttt{imdb\_id}. The main FDs are:
+    \[
+    \texttt{tmdb\_id} \rightarrow \{\texttt{imdb\_id}, \texttt{budget}, \texttt{revenue}, \texttt{popularity}, \texttt{overview}, \texttt{poster\_path}\},
+    \]
+    and (conceptually) also
+    \[
+    \texttt{imdb\_id} \rightarrow \{\texttt{tmdb\_id}, \texttt{budget}, \texttt{revenue}, \texttt{popularity}, \texttt{overview}, \texttt{poster\_path}\}.
+    \]
+    Thus both \texttt{tmdb\_id} and \texttt{imdb\_id} behave as candidate keys.
+\end{itemize}
+
+\paragraph{\texttt{countries}}
+
+\[
+R_{\text{countries}}( \texttt{country\_name} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{country\_name}\}$.
+    \item There are no non-trivial FDs other than the key determining itself.
+\end{itemize}
+
+\paragraph{\texttt{movie\_production\_countries}}
+
+\[
+R_{\text{movie\_production\_countries}}( \texttt{tmdb\_id}, \texttt{country\_name} )
+\]
+
+\begin{itemize}
+    \item Primary key: $\{\texttt{tmdb\_id}, \texttt{country\_name}\}$.
+    \item Non-trivial FDs:
+    \[
+    (\texttt{tmdb\_id}, \texttt{country\_name}) \rightarrow \text{(all attributes)}.
+    \]
+\end{itemize}
+
+\subsection*{BCNF Verification}
+
+We now check the BCNF condition relation by relation.
+
+\begin{itemize}
+    \item \textbf{\texttt{movies}:} The only non-trivial FD has determinant $\{\texttt{movie\_id}\}$, which is the primary key. Hence every non-trivial FD has a key on the left-hand side, so \texttt{movies} is in BCNF.
+    \item \textbf{\texttt{genres}:} The determinants of all non-trivial FDs are $\{\texttt{genre\_id}\}$ or $\{\texttt{genre\_name}\}$, both of which are candidate keys. Therefore \texttt{genres} is in BCNF.
+    \item \textbf{\texttt{movie\_genres}:} The only non-trivial FD has determinant $\{\texttt{movie\_id}, \texttt{genre\_id}\}$, which is the primary key. Thus \texttt{movie\_genres} is in BCNF.
+    \item \textbf{\texttt{people}:} The determinant of the only non-trivial FD is the primary key $\{\texttt{person\_id}\}$, so \texttt{people} is in BCNF.
+    \item \textbf{\texttt{roles}:} The only non-trivial FD is from the composite key $\{\texttt{movie\_id}, \texttt{person\_id}, \texttt{role}\}$ to all attributes. Hence \texttt{roles} is in BCNF.
+    \item \textbf{\texttt{person\_known\_for}:} The only non-trivial FD is from the composite key $\{\texttt{person\_id}, \texttt{movie\_id}\}$ to all attributes. Therefore \texttt{person\_known\_for} is in BCNF.
+    \item \textbf{\texttt{market\_info}:} Every non-trivial FD has determinant either $\{\texttt{tmdb\_id}\}$ or $\{\texttt{imdb\_id}\}$, each of which is a candidate key in the cleaned dataset. Thus \texttt{market\_info} is in BCNF.
+    \item \textbf{\texttt{countries}:} The only key is $\{\texttt{country\_name}\}$, and there are no non-trivial FDs with a non-key determinant. Therefore \texttt{countries} is in BCNF.
+    \item \textbf{\texttt{movie\_production\_countries}:} The only non-trivial FD is from the composite key $\{\texttt{tmdb\_id}, \texttt{country\_name}\}$ to the full tuple. Hence \texttt{movie\_production\_countries} is in BCNF.
+\end{itemize}
+
+Since every relation in our schema satisfies the BCNF condition, the entire schema is in BCNF and therefore also in 3NF, meeting the normalization requirement of the project.
+
+
+
+\end{document}
