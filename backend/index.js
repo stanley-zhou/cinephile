@@ -70,7 +70,7 @@ app.get('/movies/:title/genres', async (req, res) => {
         m.num_votes,
         g.genre_name
       FROM Movies AS m
-      JOIN MovieGenres AS mg ON m.movie_id = mg.movie_id
+      JOIN movie_genres AS mg ON m.movie_id = mg.movie_id
       JOIN Genres AS g ON mg.genre_id = g.genre_id
       WHERE m.title = $1
       ORDER BY g.genre_name;
@@ -94,7 +94,7 @@ app.get('/genres/stats/ratings', async (req, res) => {
           COUNT(*) AS num_movies,
           AVG(m.rating) AS avg_rating
       FROM Genres AS g
-      JOIN MovieGenres AS mg ON g.genre_id = mg.genre_id
+      JOIN movie_genres AS mg ON g.genre_id = mg.genre_id
       JOIN Movies AS m ON mg.movie_id = m.movie_id
       WHERE m.num_votes >= 10000
       GROUP BY g.genre_name
@@ -344,9 +344,9 @@ app.get('/movies/genre/drama-romance', async (req, res) => {
           m.rating,
           m.num_votes
       FROM Movies AS m
-      JOIN MovieGenres mg1 ON m.movie_id = mg1.movie_id
+      JOIN movie_genres mg1 ON m.movie_id = mg1.movie_id
       JOIN Genres      g1  ON mg1.genre_id = g1.genre_id
-      JOIN MovieGenres mg2 ON m.movie_id = mg2.movie_id
+      JOIN movie_genres mg2 ON m.movie_id = mg2.movie_id
       JOIN Genres      g2  ON mg2.genre_id = g2.genre_id
       WHERE g1.genre_name = 'Drama'
         AND g2.genre_name = 'Romance'
@@ -437,6 +437,95 @@ app.get('/analytics/high-roi-movies', async (req, res) => {
     res.status(500).send('Database error');
   }
 });
+
+
+// Route 11 — Movie Details for Popup (Complex Query 11)
+// GET /movies/:movieId/details
+app.get('/movies/:movieId/details', async (req, res) => {
+  const { movieId } = req.params;
+
+  const sql = `  -- paste the SQL above here, with $1
+    SELECT
+      m.movie_id,
+      m.title,
+      m.release_year,
+      m.runtime_minutes,
+      m.rating,
+      m.num_votes,
+      mi.overview,
+      mi.poster_path,
+      ARRAY_AGG(DISTINCT g.genre_name) FILTER (WHERE g.genre_name IS NOT NULL) AS genres,
+      ARRAY_AGG(DISTINCT p_dir.name)   FILTER (WHERE r.role = 'director')     AS directors,
+      (
+        SELECT ARRAY(
+          SELECT p_cast.name
+          FROM (
+            SELECT DISTINCT r_cast.person_id
+            FROM roles r_cast
+            WHERE r_cast.movie_id = m.movie_id
+              AND r_cast.role IN ('actor', 'actress')
+          ) movie_cast
+          JOIN people p_cast
+            ON p_cast.person_id = movie_cast.person_id
+          LEFT JOIN roles all_roles
+            ON all_roles.person_id = movie_cast.person_id
+           AND all_roles.role IN ('actor', 'actress')
+          GROUP BY p_cast.person_id, p_cast.name
+          ORDER BY COUNT(all_roles.movie_id) DESC, p_cast.name
+          LIMIT 3
+        )
+      ) AS cast
+    FROM movies m
+    LEFT JOIN movie_genres mg
+      ON mg.movie_id = m.movie_id
+    LEFT JOIN genres g
+      ON g.genre_id = mg.genre_id
+    LEFT JOIN roles r
+      ON r.movie_id = m.movie_id
+    LEFT JOIN people p_dir
+      ON p_dir.person_id = r.person_id
+    LEFT JOIN market_info mi
+      ON mi.imdb_id = m.movie_id
+    WHERE m.movie_id = $1
+    GROUP BY
+      m.movie_id,
+      m.title,
+      m.release_year,
+      m.runtime_minutes,
+      m.rating,
+      m.num_votes,
+      mi.overview,
+      mi.poster_path;
+  `;
+
+  try {
+    const result = await pool.query(sql, [movieId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
+    const row = result.rows[0];
+
+    res.json({
+      movie_id: row.movie_id,
+      title: row.title,
+      release_year: row.release_year,
+      runtime_minutes: row.runtime_minutes,
+      rating: row.rating,
+      num_votes: row.num_votes,
+      overview: row.overview ?? undefined,
+      poster_path: row.poster_path ?? undefined,
+      genres: row.genres ?? [],
+      directors: row.directors ?? [],
+      cast: row.cast ?? []
+    });
+  } catch (err) {
+    console.error('Error in /movies/:movieId/details:', err);
+    res.status(500).send('Database error');
+  }
+});
+
 
 // start server
 app.listen(3001, () => {

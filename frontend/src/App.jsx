@@ -8,6 +8,10 @@ function App() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchInput, setSearchInput] = useState('')
+  const [selectedMovie, setSelectedMovie] = useState(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [detailsError, setDetailsError] = useState('')
+
 
   useEffect(() => {
     fetchData(activeView)
@@ -76,6 +80,29 @@ function App() {
     }
   }
 
+  const openMovieDetails = async (movieId) => {
+  setDetailsLoading(true)
+  setDetailsError('')
+  try {
+    const response = await fetch(`${API_BASE}/movies/${encodeURIComponent(movieId)}/details`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch movie details')
+    }
+    const result = await response.json()
+    setSelectedMovie(result)
+  } catch (err) {
+    console.error('Error fetching movie details:', err)
+    setDetailsError('Could not load movie details')
+  } finally {
+    setDetailsLoading(false)
+  }
+}
+
+const closeMovieDetails = () => {
+  setSelectedMovie(null)
+  setDetailsError('')
+}
+
   const renderContent = () => {
     if (loading) {
       return <div className="loader">Loading...</div>
@@ -87,21 +114,27 @@ function App() {
 
     switch(activeView) {
       case 'popular':
-        return (
-          <div className="movie-grid">
-            {data.map((movie, idx) => (
-              <div key={movie.movie_id} className="movie-card" style={{ animationDelay: `${idx * 0.05}s` }}>
-                <div className="movie-rank">#{idx + 1}</div>
-                <h3 className="movie-title">{movie.title}</h3>
-                <div className="movie-meta">
-                  <span className="year">{movie.release_year}</span>
-                  <span className="rating">★ {movie.rating}</span>
-                </div>
-                <div className="votes">{movie.num_votes.toLocaleString()} votes</div>
+      return (
+        <div className="movie-grid">
+          {data.map((movie, idx) => (
+            <div
+              key={movie.movie_id}
+              className="movie-card"
+              style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+              onClick={() => openMovieDetails(movie.movie_id)}
+            >
+              <div className="movie-rank">#{idx + 1}</div>
+              <h3 className="movie-title">{movie.title}</h3>
+              <div className="movie-meta">
+                <span className="year">{movie.release_year}</span>
+                <span className="rating">★ {movie.rating}</span>
               </div>
-            ))}
-          </div>
-        )
+              <div className="votes">{movie.num_votes.toLocaleString()} votes</div>
+            </div>
+          ))}
+        </div>
+      )
+
 
       case 'genres':
         return (
@@ -434,6 +467,91 @@ function App() {
       <main className="main">
         {renderContent()}
       </main>
+
+      {(selectedMovie || detailsLoading || detailsError) && (
+        <div className="movie-modal-backdrop" onClick={closeMovieDetails}>
+          <div
+            className="movie-modal"
+            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+          >
+            <button className="movie-modal-close" onClick={closeMovieDetails}>
+              ✕
+            </button>
+
+            {detailsLoading && !selectedMovie && (
+              <div className="movie-modal-loading">Loading movie details...</div>
+            )}
+
+            {detailsError && !detailsLoading && !selectedMovie && (
+              <div className="movie-modal-error">{detailsError}</div>
+            )}
+
+            {selectedMovie && (
+              <div className="movie-modal-content">
+                <div className="movie-modal-header">
+                  <h2>{selectedMovie.title}</h2>
+                  <div className="movie-modal-meta">
+                    {selectedMovie.release_year && <span>{selectedMovie.release_year}</span>}
+                    {selectedMovie.runtime_minutes && (
+                      <span>{selectedMovie.runtime_minutes} min</span>
+                    )}
+                    {selectedMovie.rating && (
+                      <span>★ {selectedMovie.rating} ({selectedMovie.num_votes.toLocaleString()} votes)</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="movie-modal-body">
+                  {selectedMovie.poster_path && (
+                    <div className="movie-modal-poster">
+                      {/* simple TMDb image test – if you want to try it */}
+                      <img
+                        src={`https://image.tmdb.org/t/p/w300${selectedMovie.poster_path}`}
+                        alt={selectedMovie.title}
+                      />
+                    </div>
+                  )}
+
+                  <div className="movie-modal-info">
+                    {selectedMovie.genres && selectedMovie.genres.length > 0 && (
+                      <div className="movie-modal-section">
+                        <h4>Genres</h4>
+                        <div className="movie-modal-tags">
+                          {selectedMovie.genres.map((g) => (
+                            <span key={g} className="movie-tag">{g}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedMovie.directors && selectedMovie.directors.length > 0 && (
+                      <div className="movie-modal-section">
+                        <h4>Director{selectedMovie.directors.length > 1 ? 's' : ''}</h4>
+                        <p>{selectedMovie.directors.join(', ')}</p>
+                      </div>
+                    )}
+
+                    {selectedMovie.cast && selectedMovie.cast.length > 0 && (
+                      <div className="movie-modal-section">
+                        <h4>Top Cast</h4>
+                        <p>{selectedMovie.cast.join(', ')}</p>
+                      </div>
+                    )}
+
+                    {selectedMovie.overview && (
+                      <div className="movie-modal-section">
+                        <h4>Overview</h4>
+                        <p>{selectedMovie.overview}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
