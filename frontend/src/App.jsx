@@ -11,9 +11,14 @@ function App() {
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [detailsError, setDetailsError] = useState('')
+  const [knownForName, setKnownForName] = useState('')
 
 
   useEffect(() => {
+    // Don't auto-fetch for views that require a search parameter
+    if (activeView === 'movie-genres' || activeView === 'person-known-for') {
+      return
+    }
     fetchData(activeView)
   }, [activeView])
 
@@ -21,7 +26,7 @@ function App() {
     setLoading(true)
     try {
       let url = ''
-      switch(view) {
+      switch (view) {
         case 'popular':
           url = `${API_BASE}/movies/popular/high-rated`
           break
@@ -40,8 +45,8 @@ function App() {
         case 'decades':
           url = `${API_BASE}/movies/best-per-decade`
           break
-        case 'drama-romance':
-          url = `${API_BASE}/movies/genre/drama-romance`
+        case 'hidden-gems':
+          url = `${API_BASE}/movies/hidden-gems`
           break
         case 'high-rated-people':
           url = `${API_BASE}/people/high-rated-knownfor`
@@ -61,7 +66,7 @@ function App() {
         default:
           url = `${API_BASE}/movies/popular/high-rated`
       }
-      
+
       const response = await fetch(url)
       const result = await response.json()
       setData(result)
@@ -73,12 +78,26 @@ function App() {
     }
   }
 
+
   const handleSearch = (view) => {
-    if (searchInput.trim()) {
-      setActiveView(view)
-      fetchData(view, searchInput)
+    const term = searchInput.trim()
+    if (!term) return
+
+    if (view === 'person-known-for') {
+      setKnownForName(term)
     }
+
+    setActiveView(view)
+    fetchData(view, term)
   }
+
+
+  const openKnownForFromPeople = (personName) => {
+    setKnownForName(personName)            
+    setActiveView('person-known-for')
+    fetchData('person-known-for', personName)
+  }
+
 
   const openMovieDetails = async (movieId) => {
   setDetailsLoading(true)
@@ -153,7 +172,12 @@ const closeMovieDetails = () => {
         return (
           <div className="person-list">
             {data.map((director, idx) => (
-              <div key={director.person_id} className="person-item" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={director.person_id}
+                className="person-item"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => openKnownForFromPeople(director.name)}
+              >
                 <div className="person-rank">{idx + 1}</div>
                 <div className="person-info">
                   <h3 className="person-name">{director.name}</h3>
@@ -171,7 +195,12 @@ const closeMovieDetails = () => {
         return (
           <div className="person-list">
             {data.map((actor, idx) => (
-              <div key={actor.person_id} className="person-item" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={actor.person_id}
+                className="person-item"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => openKnownForFromPeople(actor.name)}
+              >
                 <div className="person-rank">{idx + 1}</div>
                 <div className="person-info">
                   <h3 className="person-name">{actor.name}</h3>
@@ -223,17 +252,24 @@ const closeMovieDetails = () => {
           </div>
         )
 
-      case 'drama-romance':
+      case 'hidden-gems':
         return (
           <div className="movie-grid">
             {data.map((movie, idx) => (
-              <div key={movie.movie_id} className="movie-card" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={movie.movie_id}
+                className="movie-card"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => openMovieDetails(movie.movie_id)}
+              >
                 <h3 className="movie-title">{movie.title}</h3>
                 <div className="movie-meta">
                   <span className="year">{movie.release_year}</span>
                   <span className="rating">★ {movie.rating}</span>
                 </div>
-                <div className="votes">{movie.num_votes.toLocaleString()} votes</div>
+                <div className="votes">
+                  {movie.num_votes.toLocaleString()} votes
+                </div>
               </div>
             ))}
           </div>
@@ -243,12 +279,20 @@ const closeMovieDetails = () => {
         return (
           <div className="person-list">
             {data.map((person, idx) => (
-              <div key={person.person_id} className="person-item" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={person.person_id}
+                className="person-item"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => openKnownForFromPeople(person.name)}
+              >
                 <div className="person-rank">{idx + 1}</div>
                 <div className="person-info">
                   <h3 className="person-name">{person.name}</h3>
                   <div className="person-stats">
-                    <span>All known-for movies rated 8.0+</span>
+                    <span>
+                      {person.num_known_for} known-for movies,&nbsp;
+                      avg ★ {parseFloat(person.avg_rating).toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -325,18 +369,23 @@ const closeMovieDetails = () => {
         )
 
       case 'movie-genres':
-      case 'person-known-for':
         return (
           <div className="search-results">
             {data.map((item, idx) => (
-              <div key={idx} className="result-item" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={idx}
+                className="result-item"
+                style={{ animationDelay: `${idx * 0.05}s` }}
+              >
                 {item.genre_name && <div className="genre-badge">{item.genre_name}</div>}
                 {item.title && (
                   <>
                     <h3 className="movie-title">{item.title}</h3>
                     <div className="movie-meta">
                       {item.rating && <span className="rating">★ {item.rating}</span>}
-                      {item.num_votes && <span>{item.num_votes.toLocaleString()} votes</span>}
+                      {item.num_votes && (
+                        <span>{item.num_votes.toLocaleString()} votes</span>
+                      )}
                     </div>
                   </>
                 )}
@@ -344,6 +393,35 @@ const closeMovieDetails = () => {
             ))}
           </div>
         )
+
+      case 'person-known-for':
+        return (
+          <div className="search-results">
+            {knownForName && (
+              <h2 className="section-title">Filmography Highlights – {knownForName}</h2>
+            )}
+            {data.map((item, idx) => (
+              <div
+                key={idx}
+                className="result-item"
+                style={{ animationDelay: `${idx * 0.05}s` }}
+              >
+                {item.title && (
+                  <>
+                    <h3 className="movie-title">{item.title}</h3>
+                    <div className="movie-meta">
+                      {item.rating && <span className="rating">★ {item.rating}</span>}
+                      {item.num_votes && (
+                        <span>{item.num_votes.toLocaleString()} votes</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+
 
       default:
         return null
@@ -375,10 +453,10 @@ const closeMovieDetails = () => {
             Best by Decade
           </button>
           <button 
-            className={activeView === 'drama-romance' ? 'nav-btn active' : 'nav-btn'}
-            onClick={() => setActiveView('drama-romance')}
+            className={activeView === 'hidden-gems' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveView('hidden-gems')}
           >
-            Drama × Romance
+            Hidden Gems
           </button>
         </div>
 
@@ -526,6 +604,13 @@ const closeMovieDetails = () => {
                             <span key={g} className="movie-tag">{g}</span>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {selectedMovie.countries && selectedMovie.countries.length > 0 && (
+                      <div className="movie-modal-section">
+                        <h4>Production Countries</h4>
+                        <p>{selectedMovie.countries.join(', ')}</p>
                       </div>
                     )}
 

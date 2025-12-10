@@ -198,38 +198,44 @@ app.get('/actors/frequent-pairs', async (req, res) => {
 });
 
 
-// Route 6 — People With All High-Rated Known-For Movies (Complex Query 6)
+// Route 6 — High-Rated Known-For Filmographies (Complex Query X)
 // GET /people/high-rated-knownfor
 app.get('/people/high-rated-knownfor', async (req, res) => {
-  try {
-    const query = `
+  const sql = `
+    WITH person_stats AS (
       SELECT
-          p.person_id,
-          p.name
-      FROM People AS p
-      WHERE EXISTS (   -- they have at least one known-for movie
-          SELECT 1
-          FROM PersonKnownFor pk
-          WHERE pk.person_id = p.person_id
-      )
-      AND NOT EXISTS ( -- none of the known-for movies has rating < 8.0
-          SELECT 1
-          FROM PersonKnownFor pk
-          JOIN Movies m ON pk.movie_id = m.movie_id
-          WHERE pk.person_id = p.person_id
-            AND m.rating < 8.0
-      )
-      ORDER BY p.name;
-    `;
+        p.person_id,
+        p.name,
+        COUNT(*) AS num_known_for,
+        AVG(m.rating) AS avg_rating,
+        AVG(m.num_votes) AS avg_votes   -- average popularity of their known-for movies
+      FROM people p
+      JOIN person_known_for pk ON pk.person_id = p.person_id
+      JOIN movies m ON m.movie_id = pk.movie_id
+      GROUP BY p.person_id, p.name
+    )
+    SELECT
+      person_id,
+      name,
+      num_known_for,
+      avg_rating,
+      avg_votes
+    FROM person_stats
+    WHERE num_known_for >= 2
+      AND avg_rating >= 8.5
+      AND avg_votes >= 10000     -- popularity filter: adjust if needed
+    ORDER BY avg_rating DESC, avg_votes DESC, name
+    LIMIT 20;
+`;
 
-    const result = await pool.query(query);
-    res.json(result.rows); // person_id, name
+  try {
+    const result = await pool.query(sql);
+    res.json(result.rows);
   } catch (err) {
-    console.error('Database error on /people/high-rated-knownfor:', err);
+    console.error('Error in /people/high-rated-knownfor:', err);
     res.status(500).send('Database error');
   }
 });
-
 
 // Route 7 — Most Prolific Actors/Actresses (Query 7)
 // GET /actors/prolific
@@ -305,29 +311,31 @@ app.get('/movies/best-per-decade', async (req, res) => {
 // Route 9 — Known-For Movies for a Given Person (Query 9)
 // GET /people/:name/known-for
 app.get('/people/:name/known-for', async (req, res) => {
+  const { name } = req.params
+
+  const sql = `
+    SELECT
+      m.movie_id,
+      m.title,
+      m.release_year,
+      m.rating,
+      m.num_votes
+    FROM people p
+    JOIN person_known_for pkf
+      ON pkf.person_id = p.person_id
+    JOIN movies m
+      ON m.movie_id = pkf.movie_id
+    WHERE p.name ILIKE $1
+    ORDER BY m.rating DESC, m.num_votes DESC, m.title
+    LIMIT 20;
+  `
+
   try {
-    const { name } = req.params; // person name from URL
-
-    const query = `
-      SELECT
-          p.person_id,
-          p.name,
-          m.movie_id,
-          m.title,
-          m.rating,
-          m.num_votes
-      FROM People AS p
-      JOIN PersonKnownFor pk ON p.person_id = pk.person_id
-      JOIN Movies         AS m  ON pk.movie_id = m.movie_id
-      WHERE p.name = $1
-      ORDER BY m.rating DESC, m.num_votes DESC;
-    `;
-
-    const result = await pool.query(query, [name]);
-    res.json(result.rows); // person_id, name, movie_id, title, rating, num_votes
+    const result = await pool.query(sql, [name])
+    res.json(result.rows)
   } catch (err) {
-    console.error('Database error on /people/:name/known-for:', err);
-    res.status(500).send('Database error');
+    console.error('Database error on /people/:name/known-for:', err)
+    res.status(500).send('Database error')
   }
 });
 
@@ -454,6 +462,7 @@ app.get('/movies/:movieId/details', async (req, res) => {
       m.num_votes,
       mi.overview,
       mi.poster_path,
+      ARRAY_AGG(DISTINCT c.country_name) FILTER (WHERE c.country_name IS NOT NULL) AS countries,
       ARRAY_AGG(DISTINCT g.genre_name) FILTER (WHERE g.genre_name IS NOT NULL) AS genres,
       ARRAY_AGG(DISTINCT p_dir.name)   FILTER (WHERE r.role = 'director')     AS directors,
       (
@@ -486,6 +495,10 @@ app.get('/movies/:movieId/details', async (req, res) => {
       ON p_dir.person_id = r.person_id
     LEFT JOIN market_info mi
       ON mi.imdb_id = m.movie_id
+    LEFT JOIN movie_production_countries mpc
+      ON mpc.tmdb_id = mi.tmdb_id
+    LEFT JOIN countries c
+      ON c.country_name = mpc.country_name
     WHERE m.movie_id = $1
     GROUP BY
       m.movie_id,
@@ -518,10 +531,38 @@ app.get('/movies/:movieId/details', async (req, res) => {
       poster_path: row.poster_path ?? undefined,
       genres: row.genres ?? [],
       directors: row.directors ?? [],
-      cast: row.cast ?? []
+      cast: row.cast ?? [],
+      countries: row.countries ?? []
     });
   } catch (err) {
     console.error('Error in /movies/:movieId/details:', err);
+    res.status(500).send('Database error');
+  }
+});
+
+
+// Route 12 — Hidden Gems (High Rating, Low Popularity) (Complex Query 12)
+// GET /movies/hidden-gems
+app.get('/movies/hidden-gems', async (req, res) => {
+  const sql = `
+    SELECT
+      movie_id,
+      title,
+      release_year,
+      rating,
+      num_votes
+    FROM movies
+    WHERE rating >= 8.0
+      AND num_votes BETWEEN 1000 AND 10000
+    ORDER BY rating DESC, num_votes ASC
+    LIMIT 50;
+  `;
+
+  try {
+    const result = await pool.query(sql);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error in /movies/hidden-gems:', err);
     res.status(500).send('Database error');
   }
 });
