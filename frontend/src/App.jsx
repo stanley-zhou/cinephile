@@ -204,7 +204,12 @@ const closeMovieDetails = () => {
         return (
           <div className="decade-timeline">
             {data.map((movie, idx) => (
-              <div key={movie.movie_id} className="decade-item" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={movie.movie_id}
+                className="decade-item"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => openMovieDetails(movie.movie_id)}
+              >
                 <div className="decade-year">{movie.decade_start_year}s</div>
                 <div className="decade-content">
                   <h3 className="movie-title">{movie.title}</h3>
