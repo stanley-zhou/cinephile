@@ -6,16 +6,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// PostgreSQL 
-// PostgreSQL connection (using connection string)
+// Connect to AWS RDS
 const pool = new Pool({
-  connectionString: 'postgresql://postgres:2156989@localhost:5432/postgres',
+  host: 'cis5500finalproject.c3ai0u00ir5v.us-east-1.rds.amazonaws.com',   
+  port: 5432,                      
+  user: 'group15',
+  password: 'Group15OfCIS5500!', 
+  database: 'imdb_db',   
+  ssl: { rejectUnauthorized: false } 
 });
 
 
 // test API
 app.get('/', (req, res) => {
   res.send('Backend is running!');
+});
+
+app.get('/db-health', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW() AS now');
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('DB health check failed:', err);
+    res.status(500).send('DB connection error');
+  }
 });
 
 // Route 1 — High-Rated Popular Movies (Query 1)
@@ -349,8 +363,7 @@ app.get('/movies/genre/drama-romance', async (req, res) => {
   }
 });
 
-// Cross Query 11 – High-budget movies with low IMDb ratings
-// Path: GET /analytics/high-budget-low-rating
+// Cross Query 1 – High-budget movies with low IMDb ratings (IMDb + market_info)
 app.get('/analytics/high-budget-low-rating', async (req, res) => {
   const sql = `
     SELECT
@@ -359,20 +372,20 @@ app.get('/analytics/high-budget-low-rating', async (req, res) => {
         m.release_year,
         m.rating           AS imdb_rating,
         m.num_votes,
-        t.budget,
-        t.revenue,
-        (t.revenue - t.budget) AS profit
-    FROM tmdb_movies AS t
-    JOIN Movies       AS m
-      ON t.imdb_id = m.movie_id
+        mi.budget,
+        mi.revenue,
+        (mi.revenue - mi.budget) AS profit
+    FROM market_info AS mi
+    JOIN movies      AS m
+      ON mi.imdb_id = m.movie_id
     WHERE
-        t.budget >= 100000000      -- big budget: >= 100M
-        AND t.revenue > 0
-        AND m.num_votes >= 10000   -- only popular movies on IMDb
-        AND m.rating < 6.0         -- low IMDb rating
+        mi.budget >= 100000000      -- big budget: >= 100M
+        AND mi.revenue > 0
+        AND m.num_votes >= 10000    -- only popular movies
+        AND m.rating < 6.0          -- "low" IMDb rating
     ORDER BY
-        m.rating ASC,
-        t.budget DESC,
+        m.rating ASC,               -- worst-rated first
+        mi.budget DESC,
         m.num_votes DESC
     LIMIT 50;
   `;
@@ -387,9 +400,9 @@ app.get('/analytics/high-budget-low-rating', async (req, res) => {
 });
 
 
-// Cross Query 2 – Highest-ROI movies (IMDb + TMDb)
+
+// Cross Query 2 – Highest-ROI movies (IMDb + market_info)
 // ROI = (revenue - budget) / budget
-// Path: GET /analytics/high-roi-movies
 app.get('/analytics/high-roi-movies', async (req, res) => {
   const sql = `
     SELECT
@@ -398,17 +411,17 @@ app.get('/analytics/high-roi-movies', async (req, res) => {
         m.release_year,
         m.rating          AS imdb_rating,
         m.num_votes,
-        t.budget,
-        t.revenue,
-        (t.revenue - t.budget) * 1.0 / NULLIF(t.budget, 0) AS roi
-    FROM tmdb_movies AS t
-    JOIN Movies       AS m
-      ON t.imdb_id = m.movie_id
+        mi.budget,
+        mi.revenue,
+        (mi.revenue - mi.budget) * 1.0 / NULLIF(mi.budget, 0) AS roi
+    FROM market_info AS mi
+    JOIN movies      AS m
+      ON mi.imdb_id = m.movie_id
     WHERE
-        t.budget >= 10000              -- ignore fake/very tiny budgets
-        AND t.revenue > 0
-        AND m.num_votes >= 10000       -- only popular movies
-        AND t.revenue >= t.budget      -- at least non-negative profit
+        mi.budget >= 10000              -- ignore fake/very tiny budgets
+        AND mi.revenue > 0
+        AND m.num_votes >= 10000        -- only popular movies
+        AND mi.revenue >= mi.budget     -- at least non-negative profit
         AND m.rating >= 6.0
     ORDER BY
         roi DESC,
@@ -425,11 +438,8 @@ app.get('/analytics/high-roi-movies', async (req, res) => {
   }
 });
 
-
-
-
-
-// start
+// start server
 app.listen(3001, () => {
   console.log('Server running on http://localhost:3001');
 });
+
