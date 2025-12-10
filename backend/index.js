@@ -372,41 +372,44 @@ app.get('/movies/genre/drama-romance', async (req, res) => {
 });
 
 // Cross Query 1 – High-budget movies with low IMDb ratings (IMDb + market_info)
+// GET /analytics/high-budget-low-rating
 app.get('/analytics/high-budget-low-rating', async (req, res) => {
   const sql = `
     SELECT
-        m.movie_id,
-        m.title,
-        m.release_year,
-        m.rating           AS imdb_rating,
-        m.num_votes,
-        mi.budget,
-        mi.revenue,
-        (mi.revenue - mi.budget) AS profit
-    FROM market_info AS mi
-    JOIN movies      AS m
+      m.movie_id,
+      m.title,
+      m.release_year,
+      m.rating AS imdb_rating,
+      m.num_votes,
+      mi.budget,
+      mi.revenue,
+      (mi.revenue - mi.budget) AS profit
+    FROM movies m
+    JOIN market_info mi
       ON mi.imdb_id = m.movie_id
     WHERE
-        mi.budget >= 100000000      -- big budget: >= 100M
-        AND mi.revenue > 0
-        AND m.num_votes >= 10000    -- only popular movies
-        AND m.rating < 6.0          -- "low" IMDb rating
+      mi.budget IS NOT NULL
+      AND mi.revenue IS NOT NULL
+      AND mi.budget >= 60000000                 -- big budget (60M+)
+      AND m.rating <= 5.5                       -- pretty low rating
+      AND m.num_votes >= 20000                  -- enough audience
+      AND mi.revenue < mi.budget * 1.1          -- flop or near-flop
     ORDER BY
-        m.rating ASC,               -- worst-rated first
-        mi.budget DESC,
-        m.num_votes DESC
-    LIMIT 50;
-  `;
+      profit ASC,                               -- worst ROI first
+      m.rating ASC,
+      m.num_votes DESC
+    LIMIT 20;
+  `
+
 
   try {
-    const result = await pool.query(sql);
-    res.json(result.rows);
+    const result = await pool.query(sql)
+    res.json(result.rows)
   } catch (err) {
-    console.error('Error in /analytics/high-budget-low-rating:', err);
-    res.status(500).send('Database error');
+    console.error('Error in /analytics/high-budget-low-rating:', err)
+    res.status(500).send('Database error')
   }
 });
-
 
 
 // Cross Query 2 – Highest-ROI movies (IMDb + market_info)
@@ -443,6 +446,68 @@ app.get('/analytics/high-roi-movies', async (req, res) => {
   } catch (err) {
     console.error('Error in /analytics/high-roi-movies:', err);
     res.status(500).send('Database error');
+  }
+});
+
+// Analytics – Country Spotlight (production country stats)
+// GET /analytics/country-stats?sort=rating|revenue|roi|movies
+app.get('/analytics/country-stats', async (req, res) => {
+  const { sort } = req.query
+
+  // Decide ORDER BY based on sort param (safe, we only allow known values)
+  let orderBy
+  switch (sort) {
+    case 'revenue':
+      orderBy = 'total_revenue DESC, avg_rating DESC'
+      break
+    case 'roi':
+      orderBy = 'avg_roi DESC, avg_rating DESC'
+      break
+    case 'movies':
+      orderBy = 'num_movies DESC, avg_rating DESC'
+      break
+    case 'rating':
+    default:
+      orderBy = 'avg_rating DESC, total_revenue DESC'
+      break
+  }
+
+  const sql = `
+    SELECT
+      c.country_name,
+      COUNT(*) AS num_movies,
+      AVG(m.rating) AS avg_rating,
+      SUM(mi.revenue) AS total_revenue,
+      AVG(
+        CASE
+          WHEN mi.budget IS NOT NULL AND mi.budget > 0
+               AND mi.revenue IS NOT NULL
+          THEN mi.revenue::numeric / mi.budget
+          ELSE NULL
+        END
+      ) AS avg_roi
+    FROM movies m
+    JOIN market_info mi
+      ON mi.imdb_id = m.movie_id
+    JOIN movie_production_countries mpc
+      ON mpc.tmdb_id = mi.tmdb_id
+    JOIN countries c
+      ON c.country_name = mpc.country_name
+    WHERE
+      m.num_votes >= 20000
+      AND mi.revenue IS NOT NULL
+    GROUP BY c.country_name
+    HAVING COUNT(*) >= 15
+    ORDER BY ${orderBy}
+    LIMIT 20;
+  `
+
+  try {
+    const result = await pool.query(sql)
+    res.json(result.rows)
+  } catch (err) {
+    console.error('Error in /analytics/country-stats:', err)
+    res.status(500).send('Database error')
   }
 });
 

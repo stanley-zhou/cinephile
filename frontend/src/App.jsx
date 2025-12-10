@@ -12,6 +12,7 @@ function App() {
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [detailsError, setDetailsError] = useState('')
   const [knownForName, setKnownForName] = useState('')
+  const [countrySort, setCountrySort] = useState('rating')
 
 
   useEffect(() => {
@@ -21,6 +22,15 @@ function App() {
     }
     fetchData(activeView)
   }, [activeView])
+
+  useEffect(() => {
+    // When sort option changes while viewing Country Spotlight, refetch with new sort
+    if (activeView === 'country-stats') {
+      fetchData('country-stats')
+    }
+  }, [countrySort, activeView])
+
+
 
   const fetchData = async (view, param = '') => {
     setLoading(true)
@@ -62,6 +72,12 @@ function App() {
           break
         case 'person-known-for':
           url = `${API_BASE}/people/${encodeURIComponent(param)}/known-for`
+          break
+        case 'high-roi':
+          url = `${API_BASE}/analytics/high-roi-movies`
+          break
+        case 'country-stats':
+          url = `${API_BASE}/analytics/country-stats?sort=${countrySort}`
           break
         default:
           url = `${API_BASE}/movies/popular/high-rated`
@@ -115,7 +131,17 @@ function App() {
   } finally {
     setDetailsLoading(false)
   }
-}
+  }
+
+  const handleMovieCardClick = (movieId) => {
+    const selection = window.getSelection()
+    // If user is selecting text (non-empty selection), do nothing
+    if (selection && selection.toString().length > 0) {
+      return
+    }
+    openMovieDetails(movieId)
+  }
+
 
 const closeMovieDetails = () => {
   setSelectedMovie(null)
@@ -140,7 +166,7 @@ const closeMovieDetails = () => {
               key={movie.movie_id}
               className="movie-card"
               style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
-              onClick={() => openMovieDetails(movie.movie_id)}
+              onClick={() => handleMovieCardClick(movie.movie_id)}
             >
               <div className="movie-rank">#{idx + 1}</div>
               <h3 className="movie-title">{movie.title}</h3>
@@ -237,7 +263,7 @@ const closeMovieDetails = () => {
                 key={movie.movie_id}
                 className="decade-item"
                 style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
-                onClick={() => openMovieDetails(movie.movie_id)}
+                onClick={() => handleMovieCardClick(movie.movie_id)}
               >
                 <div className="decade-year">{movie.decade_start_year}s</div>
                 <div className="decade-content">
@@ -260,7 +286,7 @@ const closeMovieDetails = () => {
                 key={movie.movie_id}
                 className="movie-card"
                 style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
-                onClick={() => openMovieDetails(movie.movie_id)}
+                onClick={() => handleMovieCardClick(movie.movie_id)}
               >
                 <h3 className="movie-title">{movie.title}</h3>
                 <div className="movie-meta">
@@ -304,7 +330,12 @@ const closeMovieDetails = () => {
         return (
           <div className="analytics-grid">
             {data.map((movie, idx) => (
-              <div key={movie.movie_id} className="analytics-card" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={movie.movie_id}
+                className="analytics-card"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => handleMovieCardClick(movie.movie_id)}
+              >
                 <h3 className="movie-title">{movie.title}</h3>
                 <div className="analytics-details">
                   <div className="detail-row">
@@ -317,16 +348,16 @@ const closeMovieDetails = () => {
                   </div>
                   <div className="detail-row">
                     <span>Budget:</span>
-                    <span>${(movie.budget / 1000000).toFixed(0)}M</span>
+                    <span>${(movie.budget / 1_000_000).toFixed(0)}M</span>
                   </div>
                   <div className="detail-row">
                     <span>Revenue:</span>
-                    <span>${(movie.revenue / 1000000).toFixed(0)}M</span>
+                    <span>${(movie.revenue / 1_000_000).toFixed(0)}M</span>
                   </div>
                   <div className="detail-row profit-row">
                     <span>Profit:</span>
                     <span className={movie.profit >= 0 ? 'profit-positive' : 'profit-negative'}>
-                      ${(movie.profit / 1000000).toFixed(0)}M
+                      ${(movie.profit / 1_000_000).toFixed(0)}M
                     </span>
                   </div>
                 </div>
@@ -335,11 +366,17 @@ const closeMovieDetails = () => {
           </div>
         )
 
+
       case 'high-roi':
         return (
           <div className="analytics-grid">
             {data.map((movie, idx) => (
-              <div key={movie.movie_id} className="analytics-card" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div
+                key={movie.movie_id}
+                className="analytics-card"
+                style={{ animationDelay: `${idx * 0.05}s`, cursor: 'pointer' }}
+                onClick={() => handleMovieCardClick(movie.movie_id)}
+              >
                 <h3 className="movie-title">{movie.title}</h3>
                 <div className="analytics-details">
                   <div className="detail-row">
@@ -352,11 +389,11 @@ const closeMovieDetails = () => {
                   </div>
                   <div className="detail-row">
                     <span>Budget:</span>
-                    <span>${(movie.budget / 1000000).toFixed(0)}M</span>
+                    <span>${(movie.budget / 1_000_000).toFixed(1)}M</span>
                   </div>
                   <div className="detail-row">
                     <span>Revenue:</span>
-                    <span>${(movie.revenue / 1000000).toFixed(0)}M</span>
+                    <span>${(movie.revenue / 1_000_000).toFixed(1)}M</span>
                   </div>
                   <div className="detail-row roi-row">
                     <span>ROI:</span>
@@ -367,6 +404,7 @@ const closeMovieDetails = () => {
             ))}
           </div>
         )
+
 
       case 'movie-genres':
         return (
@@ -421,7 +459,80 @@ const closeMovieDetails = () => {
             ))}
           </div>
         )
+      
+      case 'country-stats':
+        return (
+          <div>
+            <div className="country-sort-bar">
+              <label className="country-sort-label">
+                Sort by:&nbsp;
+                <select
+                  value={countrySort}
+                  onChange={(e) => setCountrySort(e.target.value)}
+                >
+                  <option value="rating">Avg Rating</option>
+                  <option value="revenue">Total Revenue</option>
+                  <option value="roi">Avg ROI</option>
+                  <option value="movies"># Movies</option>
+                </select>
+              </label>
+            </div>
 
+            <div className="analytics-grid">
+              {data.map((country, idx) => {
+                const avgRating = country.avg_rating
+                  ? parseFloat(country.avg_rating).toFixed(2)
+                  : 'N/A'
+
+                const totalRevenue = country.total_revenue
+                  ? Number(country.total_revenue)
+                  : 0
+
+                let revenueLabel = 'N/A'
+                if (totalRevenue > 0) {
+                  if (totalRevenue >= 1_000_000_000) {
+                    revenueLabel = `$${(totalRevenue / 1_000_000_000).toFixed(1)}B`
+                  } else {
+                    revenueLabel = `$${(totalRevenue / 1_000_000).toFixed(1)}M`
+                  }
+                }
+
+                const avgRoi = country.avg_roi
+                  ? (parseFloat(country.avg_roi) * 100).toFixed(0) + '%'
+                  : 'N/A'
+
+                return (
+                  <div
+                    key={country.country_name}
+                    className="analytics-card"
+                    style={{ animationDelay: `${idx * 0.05}s` }}
+                  >
+                    <h3 className="movie-title">{country.country_name}</h3>
+
+                    <div className="analytics-details">
+                      <div className="detail-row">
+                        <span>Films:</span>
+                        <span>{country.num_movies}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Avg Rating:</span>
+                        <span>★ {avgRating}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Total Revenue:</span>
+                        <span>{revenueLabel}</span>
+                      </div>
+                      <div className="detail-row roi-row">
+                        <span>Avg ROI:</span>
+                        <span className="roi-value">{avgRoi}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
 
       default:
         return null
@@ -507,6 +618,12 @@ const closeMovieDetails = () => {
             onClick={() => setActiveView('high-roi')}
           >
             Highest ROI
+          </button>
+          <button 
+            className={activeView === 'country-stats' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveView('country-stats')}
+          >
+            Country Spotlight
           </button>
         </div>
 

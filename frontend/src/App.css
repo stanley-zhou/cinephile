@@ -807,3 +807,51 @@ body {
   font-size: 0.8rem;
 }
 
+.country-sort-bar {
+  margin: -0.25rem 0 1rem;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 1.5rem;
+}
+
+.country-sort-label {
+  font-size: 0.85rem;
+  color: #b0b0b0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Make the select look like a mini nav button */
+.country-sort-label select {
+  padding: 4px 12px;
+  background-color: #151515;
+  color: #f5f5f5;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;        /* hide default arrow (most browsers) */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  position: relative;
+}
+
+/* A subtle hover + focus effect, matching your red accent */
+.country-sort-label select:hover {
+  border-color: #666;
+}
+
+.country-sort-label select:focus {
+  border-color: #ff4b4b;
+  box-shadow: 0 0 0 1px rgba(255, 75, 75, 0.5);
+}
+
+/* Optional: style the dropdown list background a bit */
+.country-sort-label select option {
+  background-color: #111;
+  color: #f5f5f5;
+}
+
+
