@@ -15,13 +15,15 @@ app.use(express.json());
 // Database connection
 // ============================================================================
 
+const { Pool } = require('pg');
+
 const pool = new Pool({
-  host: process.env.PGHOST,
-  port: process.env.PGPORT || 5432,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  database: process.env.PGDATABASE,
-  ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : false,
+  host: process.env.PGHOST || 'cis5500finalproject.c3ai0u00ir5v.us-east-1.rds.amazonaws.com',
+  port: Number(process.env.PGPORT) || 5432,
+  user: process.env.PGUSER || 'group15',
+  password: process.env.PGPASSWORD || 'Group15OfCIS5500!',
+  database: process.env.PGDATABASE || 'imdb_db',
+  ssl: { rejectUnauthorized: false }
 });
 
 
