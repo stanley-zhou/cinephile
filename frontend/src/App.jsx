@@ -212,6 +212,10 @@ function App() {
     return dir === 'desc' ? '↓' : '↑'
   }
 
+  const isExploreSortedBy = (column) => {
+    const [col] = exploreSort.split('_')
+    return col === column
+  }
 
   const renderContent = () => {
     if (loading) {
@@ -875,7 +879,7 @@ function App() {
 
         <div className="nav-section">
           <div className="nav-section">
-            <div className="nav-label">Search</div>
+            <div className="nav-label">Library</div>
             <button
               className={activeView === 'movies-explore' ? 'nav-btn active' : 'nav-btn'}
               onClick={() => {
@@ -884,7 +888,7 @@ function App() {
                 setActiveView('movies-explore')  // useEffect will trigger fetch
               }}
             >
-              Explore Movies
+              Browse All Movies
             </button>
           </div>
         </div>

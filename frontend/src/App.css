@@ -113,6 +113,7 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  justify-content: center;
 }
 
 .nav::-webkit-scrollbar {
@@ -857,6 +858,7 @@ body {
   margin-top: 1.5rem;
 }
 
+/* top search bar above the table */
 .explore-controls {
   display: flex;
   gap: 0.75rem;
@@ -864,42 +866,112 @@ body {
   margin-bottom: 0.75rem;
 }
 
+/* TABLE WRAPPER */
 .explore-table-wrapper {
   margin-top: 0.5rem;
-  overflow-x: auto;
 }
 
+/* TABLE BASE */
 .explore-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.9rem
+}
+
+/* HEADER STYLING */
+.explore-table thead tr {
+  background-color: #111111;
 }
 
 .explore-table th,
 .explore-table td {
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  text-align: left;
 }
 
+/* Compact, cinematic header look */
 .explore-table th {
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.75rem;
-  color: var(--color-text-dim);
+  letter-spacing: 0.09em;
+  color: var(--color-text-dimmer);
+  font-weight: 600;
 }
 
-.explore-table th.sortable {
+/* Zebra striping for rows */
+.explore-table tbody tr:nth-child(odd) {
+  background-color: #0b0b0b;
+}
+
+.explore-table tbody tr:nth-child(even) {
+  background-color: #101010;
+}
+
+/* Clickable row styling: cursor + hover feedback */
+.explore-table tbody tr {
   cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.08s ease;
+}
+
+.explore-table tbody tr:hover {
+  background-color: #181818;
+}
+
+.explore-table tbody tr:hover td:first-child {
+  color: var(--color-text);
+}
+
+/* Keep numeric columns centered (Year, Runtime, Rating, Votes) */
+.explore-table th:nth-child(2),
+.explore-table th:nth-child(4),
+.explore-table th:nth-child(5),
+.explore-table th:nth-child(6),
+.explore-table td:nth-child(2),
+.explore-table td:nth-child(4),
+.explore-table td:nth-child(5),
+.explore-table td:nth-child(6) {
+  text-align: center;
+}
+
+/* Sortable headers */
+.explore-table th.sortable {
   user-select: none;
 }
 
-
+/* Default sort icon look */
 .sort-icon {
   font-size: 0.7rem;
   opacity: 0.4;
   margin-left: 0.25rem;
 }
+
+/* On hover, icon gets a bit brighter */
+.explore-table th.sortable:hover .sort-icon {
+  opacity: 0.7;
+}
+
+/* Active sort column: stronger color + accent icon */
+.explore-table th.sortable.active {
+  color: var(--color-text);
+}
+
+.explore-table th.sortable.active .sort-icon {
+  color: var(--color-accent);
+  opacity: 1;
+}
+
+/* PAGINATION */
+.explore-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.pagination-page-size select {
+  margin-left: 0.35rem;
+}
+
 
 .explore-table th.sortable:hover .sort-icon {
   opacity: 0.7;
