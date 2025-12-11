@@ -48,3 +48,49 @@ CIS5500_Final_Project_Group15/
 │
 ├── .gitignore
 └── README.md
+
+---
+
+## 🚀 Deployment and Execution
+
+### 💻 Current Architecture
+
+* **Backend**
+    * Node.js + Express app deployed as a **Render Web Service**.
+    * Public base URL: `https://cinephile-backend-u7zh.onrender.com`
+    * Connects to a shared **AWS RDS PostgreSQL** database (`imdb_db`).
+* **Frontend**
+    * React + Vite application located in `frontend/`.
+    * The frontend is served locally during development and connects to the deployed backend for data access.
+
+> **Note:** The backend service is configured as a **Web Service** on Render. Currently, only the backend is deployed; the frontend assets are served locally via Vite.
+
+---
+
+### 🟢 Suggested Execution Method: Local Frontend + Deployed Backend
+
+This configuration is recommended for development, testing, and interaction with the live database.
+
+1.  **Clone the repository and install frontend dependencies**
+
+    ```bash
+    git clone [https://github.com/stanley-zhou/CIS5500_Final_Project_Group15.git](https://github.com/stanley-zhou/CIS5500_Final_Project_Group15.git)
+    cd CIS5500_Final_Project_Group15/frontend
+    npm install
+    ```
+
+2.  **Configure API Base URL**
+
+    Ensure the frontend is pointing to the deployed backend. In `frontend/src/App.jsx`, verify:
+
+    ```javascript
+    const API_BASE = '[https://cinephile-backend-u7zh.onrender.com](https://cinephile-backend-u7zh.onrender.com)'
+    ```
+
+3.  **Start the Frontend Application**
+
+    ```bash
+    npm run dev
+    ```
+
+    Open the Vite URL printed in the terminal (typically `http://localhost:5173`) in a browser. All data will be fetched from the deployed backend on Render.
