@@ -807,6 +807,7 @@ body {
   font-size: 0.8rem;
 }
 
+/* ===== Country sort select ===== */
 .country-sort-bar {
   margin: -0.25rem 0 1rem;
   display: flex;
@@ -822,7 +823,6 @@ body {
   gap: 0.4rem;
 }
 
-/* Make the select look like a mini nav button */
 .country-sort-label select {
   padding: 4px 12px;
   background-color: #151515;
@@ -832,13 +832,11 @@ body {
   font-size: 0.85rem;
   outline: none;
   cursor: pointer;
-  appearance: none;        /* hide default arrow (most browsers) */
+  appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  position: relative;
 }
 
-/* A subtle hover + focus effect, matching your red accent */
 .country-sort-label select:hover {
   border-color: #666;
 }
@@ -848,10 +846,118 @@ body {
   box-shadow: 0 0 0 1px rgba(255, 75, 75, 0.5);
 }
 
-/* Optional: style the dropdown list background a bit */
 .country-sort-label select option {
   background-color: #111;
   color: #f5f5f5;
 }
 
+/* ===== Explore Movies table & controls ===== */
 
+.explore-container {
+  margin-top: 1.5rem;
+}
+
+.explore-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.explore-table-wrapper {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+}
+
+.explore-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.explore-table th,
+.explore-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.explore-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.explore-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+
+.sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  margin-left: 0.25rem;
+}
+
+.explore-table th.sortable:hover .sort-icon {
+  opacity: 0.7;
+}
+
+/* pagination bar */
+.explore-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.pagination-page-size {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-page-size select {
+  margin-left: 0.35rem;
+}
+
+/* dropdown for rows-per-page */
+.explore-select {
+  padding: 4px 10px;
+  background-color: #151515;
+  color: #f5f5f5;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.explore-select:focus {
+  border-color: #ff4b4b;
+  box-shadow: 0 0 0 1px rgba(255, 75, 75, 0.5);
+}
+
+.pagination-info {
+  opacity: 0.8;
+}
+
+.explore-table th.sorted {
+  color: #ffffff;
+}
+
+.explore-table th.sorted,
+.explore-table td.sorted {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+
+.explore-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.explore-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.06);
+}

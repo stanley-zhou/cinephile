@@ -632,6 +632,113 @@ app.get('/movies/hidden-gems', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Movies – Explore with search + sort + pagination
+// Returns a paginated list of movies for the "Explore Movies" table.
+// Columns: title, year, genres, runtime, rating, votes, popularity, country
+// ---------------------------------------------------------------------------
+// GET /movies/explore
+app.get('/movies/explore', async (req, res) => {
+  try {
+    const {
+      search = '',
+      sort = 'rating_desc',
+      limit = '25',
+      offset = '0',
+    } = req.query;
+
+    const searchTerm = search.trim();
+
+    // ---- 1) sanitize paging ----
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 25, 1), 100);
+    const offsetNum = Math.max(parseInt(offset, 10) || 0, 0);
+
+    // ---- 2) map sort param to ORDER BY clause ----
+    // NOTE: use your actual column names. If your rating column is called "rating"
+    // instead of "imdb_rating", replace m.imdb_rating -> m.rating below.
+    const sortMap = {
+      'year_desc'   : 'm.release_year DESC NULLS LAST',
+      'year_asc'    : 'm.release_year ASC  NULLS LAST',
+      'runtime_desc': 'm.runtime_minutes DESC NULLS LAST',
+      'runtime_asc' : 'm.runtime_minutes ASC  NULLS LAST',
+      'rating_desc' : 'm.rating DESC   NULLS LAST',
+      'rating_asc'  : 'm.rating ASC    NULLS LAST',
+      'votes_desc'  : 'm.num_votes DESC     NULLS LAST',
+      'votes_asc'   : 'm.num_votes ASC      NULLS LAST',
+    };
+
+    const orderBy = sortMap[sort] || sortMap['rating_desc'];
+
+    // ---- 3) WHERE conditions (better “default” quality) ----
+    const values = [];
+    const whereClauses = [];
+
+    if (searchTerm) {
+      values.push(`%${searchTerm.toLowerCase()}%`);
+      whereClauses.push(`LOWER(m.title) LIKE $${values.length}`);
+    } else {
+      // Browsing with no search: hide “ghost” movies
+      whereClauses.push('m.num_votes >= 1000');
+      whereClauses.push('m.rating IS NOT NULL');
+    }
+
+    const whereSql = whereClauses.length
+      ? `WHERE ${whereClauses.join(' AND ')}`
+      : '';
+
+    const baseFrom = `
+      FROM movies m
+      LEFT JOIN movie_genres mg ON m.movie_id = mg.movie_id
+      LEFT JOIN genres g       ON mg.genre_id = g.genre_id
+      ${whereSql}
+    `;
+
+    // ---- 4) main rows query ----
+    values.push(limitNum, offsetNum);
+    const rowsSql = `
+      SELECT
+        m.movie_id,
+        m.title,
+        m.release_year,
+        m.runtime_minutes,
+        m.rating,
+        m.num_votes,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT g.genre_name), NULL) AS genres
+      ${baseFrom}
+      GROUP BY
+        m.movie_id,
+        m.title,
+        m.release_year,
+        m.runtime_minutes,
+        m.rating,
+        m.num_votes
+      ORDER BY ${orderBy}
+      LIMIT $${values.length - 1} OFFSET $${values.length};
+    `;
+
+    // ---- 5) total count (for pagination) ----
+    const totalSql = `
+      SELECT COUNT(DISTINCT m.movie_id) AS total
+      ${baseFrom};
+    `;
+
+    const [rowsResult, totalResult] = await Promise.all([
+      pool.query(rowsSql, values),
+      pool.query(totalSql, values.slice(0, values.length - 2)), // no limit/offset
+    ]);
+
+    const rows = rowsResult.rows;
+    const total = Number(totalResult.rows[0].total) || 0;
+
+    res.json({ rows, total });
+  } catch (err) {
+    console.error('Error on /movies/explore:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
 
 // start server
 app.listen(3001, () => {

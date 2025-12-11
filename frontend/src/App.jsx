@@ -13,6 +13,14 @@ function App() {
   const [detailsError, setDetailsError] = useState('')
   const [knownForName, setKnownForName] = useState('')
   const [countrySort, setCountrySort] = useState('rating')
+  const [exploreSearch, setExploreSearch] = useState('')
+  const [exploreSort, setExploreSort] = useState('rating_desc')
+  const [explorePage, setExplorePage] = useState(1)
+  const [explorePageSize, setExplorePageSize] = useState(25)
+  const [exploreTotal, setExploreTotal] = useState(0)
+  const startIdx = (explorePage - 1) * explorePageSize + 1;
+  const endIdx = Math.min(explorePage * explorePageSize, exploreTotal);
+  const isSortedCol = (column) => exploreSort.split('_')[0] === column;
 
 
   useEffect(() => {
@@ -29,6 +37,14 @@ function App() {
       fetchData('country-stats')
     }
   }, [countrySort, activeView])
+
+  useEffect(() => {
+    // Refetch when explore controls change
+    if (activeView === 'movies-explore') {
+      fetchData('movies-explore')
+    }
+  }, [activeView, exploreSort, explorePage, explorePageSize])
+
 
 
 
@@ -64,9 +80,6 @@ function App() {
         case 'high-budget-low-rating':
           url = `${API_BASE}/analytics/high-budget-low-rating`
           break
-        case 'high-roi':
-          url = `${API_BASE}/analytics/high-roi-movies`
-          break
         case 'movie-genres':
           url = `${API_BASE}/movies/${encodeURIComponent(param)}/genres`
           break
@@ -79,13 +92,42 @@ function App() {
         case 'country-stats':
           url = `${API_BASE}/analytics/country-stats?sort=${countrySort}`
           break
+        case 'movies-explore': {
+          const params = new URLSearchParams({
+            search: exploreSearch.trim(),
+            sort: exploreSort,
+            limit: String(explorePageSize),
+            offset: String((explorePage - 1) * explorePageSize),
+          })
+          url = `${API_BASE}/movies/explore?${params.toString()}`
+          break
+        }
         default:
           url = `${API_BASE}/movies/popular/high-rated`
       }
 
       const response = await fetch(url)
       const result = await response.json()
-      setData(result)
+
+      if (view === 'movies-explore') {
+        // Accept BOTH shapes:
+        // 1) [ {...}, {...} ]   (plain array)
+        // 2) { rows: [...], total: 1234 }
+        if (Array.isArray(result)) {
+          setData(result)
+          setExploreTotal(result.length)
+        } else {
+          const rows = Array.isArray(result.rows) ? result.rows : []
+          const total =
+            typeof result.total === 'number' ? result.total : rows.length
+
+          setData(rows)
+          setExploreTotal(total)
+        }
+      } else {
+        setData(result)
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error)
       setData([])
@@ -118,6 +160,7 @@ function App() {
   const openMovieDetails = async (movieId) => {
   setDetailsLoading(true)
   setDetailsError('')
+
   try {
     const response = await fetch(`${API_BASE}/movies/${encodeURIComponent(movieId)}/details`)
     if (!response.ok) {
@@ -143,10 +186,32 @@ function App() {
   }
 
 
-const closeMovieDetails = () => {
-  setSelectedMovie(null)
-  setDetailsError('')
-}
+  const closeMovieDetails = () => {
+    setSelectedMovie(null)
+    setDetailsError('')
+  }
+
+  const handleExploreSort = (column, defaultDir = 'desc') => {
+    setExplorePage(1)
+    setExploreSort((prev) => {
+      const [prevCol, prevDir] = prev.split('_')
+      if (prevCol !== column) {
+        // first time you click this column
+        return `${column}_${defaultDir}`
+      }
+      // toggle asc/desc if you click again
+      return prevDir === 'desc'
+        ? `${column}_asc`
+        : `${column}_desc`
+    })
+  }
+
+  const renderSortIcon = (column) => {
+    const [col, dir] = exploreSort.split('_')
+    if (col !== column) return '↕'   // inactive
+    return dir === 'desc' ? '↓' : '↑'
+  }
+
 
   const renderContent = () => {
     if (loading) {
@@ -154,7 +219,11 @@ const closeMovieDetails = () => {
     }
 
     if (!data || data.length === 0) {
-      return <div className="empty-state">No data found</div>
+      // For the explore table we still want to render the table UI,
+      // even if there are 0 matching movies.
+      if (activeView !== 'movies-explore') {
+        return <div className="empty-state">No data found</div>
+      }
     }
 
     switch(activeView) {
@@ -533,6 +602,183 @@ const closeMovieDetails = () => {
             </div>
           </div>
         )
+      
+       case 'movies-explore': {
+        // how many pages in total (assumes exploreTotal is from backend)
+        const totalPages = Math.max(
+          1,
+          Math.ceil(exploreTotal / explorePageSize)
+        )
+
+        return (
+          <div className="explore-container">
+            {/* TOP: only search bar + button */}
+            <div className="explore-controls">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search title..."
+                value={exploreSearch}
+                onChange={(e) => setExploreSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setExplorePage(1)
+                    fetchData('movies-explore')
+                  }
+                }}
+              />
+              <button
+                className="search-btn"
+                onClick={() => {
+                  setExplorePage(1)
+                  fetchData('movies-explore')
+                }}
+              >
+                Search
+              </button>
+            </div>
+
+            {/* TABLE */}
+            <div className="explore-table-wrapper">
+              <table className="explore-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th
+                      className={`sortable ${isSortedCol('year') ? 'sorted' : ''}`}
+                      onClick={() => handleExploreSort('year', 'desc')}
+                    >
+                      Year{' '}
+                      <span className="sort-icon">
+                        {renderSortIcon('year')}
+                      </span>
+                    </th>
+                    <th>Genres</th>
+                    <th
+                      className={`sortable ${isSortedCol('runtime') ? 'sorted' : ''}`}
+                      onClick={() => handleExploreSort('runtime', 'desc')}
+                    >
+                      Runtime (mins){' '}
+                      <span className="sort-icon">
+                        {renderSortIcon('runtime')}
+                      </span>
+                    </th>
+                    <th
+                      className={`sortable ${isSortedCol('raing') ? 'sorted' : ''}`}
+                      onClick={() => handleExploreSort('rating', 'desc')}
+                    >
+                      Rating{' '}
+                      <span className="sort-icon">
+                        {renderSortIcon('rating')}
+                      </span>
+                    </th>
+                    <th
+                      className={`sortable ${isSortedCol('votes') ? 'sorted' : ''}`}
+                      onClick={() => handleExploreSort('votes', 'desc')}
+                    >
+                      Votes{' '}
+                      <span className="sort-icon">
+                        {renderSortIcon('votes')}
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((movie) => {
+                    const genres = Array.isArray(movie.genres)
+                      ? movie.genres.join(', ')
+                      : movie.genres || '';
+
+                    const runtime =
+                      movie.runtime_minutes && movie.runtime_minutes > 0
+                        ? movie.runtime_minutes
+                        : null;
+
+                    const hasRating =
+                      movie.rating !== null && movie.rating !== undefined;
+
+                    const hasVotes =
+                      movie.num_votes !== null &&
+                      movie.num_votes !== undefined &&
+                      movie.num_votes > 0;
+
+                    return (
+                      <tr
+                        key={movie.movie_id}
+                        className="explore-row"
+                        onClick={() => handleMovieCardClick(movie.movie_id)}
+                      >
+                        <td>{movie.title}</td>
+                        <td>{movie.release_year ?? '-'}</td>
+                        <td>{genres || '-'}</td>
+                        <td>{runtime !== null ? runtime : '-'}</td>
+                        <td>
+                          {hasRating ? (
+                            <>
+                              ★ {Number(movie.rating).toFixed(1)}
+                            </>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>{hasVotes ? movie.num_votes.toLocaleString() : '-'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* BOTTOM: rows-per-page + page info + Prev/Next */}
+            <div className="explore-pagination">
+              <div className="pagination-left">
+                <label className="pagination-page-size">
+                  Rows per page:&nbsp;
+                  <select
+                    className="explore-select"
+                    value={explorePageSize}
+                    onChange={(e) => {
+                      setExplorePageSize(Number(e.target.value))
+                      setExplorePage(1)
+                    }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </label>
+              </div>
+              <div className="pagination-center">
+                <span className="pagination-info">
+                  Showing {startIdx}–{endIdx} of {exploreTotal} movies
+                </span>
+              </div>
+              <div className="pagination-right">
+                <button
+                  className="nav-btn"
+                  disabled={explorePage <= 1}
+                  onClick={() =>
+                    setExplorePage((p) => Math.max(p - 1, 1))
+                  }
+                >
+                  Prev
+                </button>
+                <button
+                  className="nav-btn"
+                  disabled={explorePage >= totalPages}
+                  onClick={() =>
+                    setExplorePage((p) => Math.min(p + 1, totalPages))
+                  }
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+  
 
       default:
         return null
@@ -628,37 +874,17 @@ const closeMovieDetails = () => {
         </div>
 
         <div className="nav-section">
-          <div className="nav-label">Search</div>
-          <div className="search-group">
-            <input 
-              type="text" 
-              className="search-input"
-              placeholder="Movie title..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch('movie-genres')}
-            />
-            <button 
-              className="search-btn"
-              onClick={() => handleSearch('movie-genres')}
+          <div className="nav-section">
+            <div className="nav-label">Search</div>
+            <button
+              className={activeView === 'movies-explore' ? 'nav-btn active' : 'nav-btn'}
+              onClick={() => {
+                // reset pagination when entering this view
+                setExplorePage(1)
+                setActiveView('movies-explore')  // useEffect will trigger fetch
+              }}
             >
-              Genres
-            </button>
-          </div>
-          <div className="search-group">
-            <input 
-              type="text" 
-              className="search-input"
-              placeholder="Person name..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch('person-known-for')}
-            />
-            <button 
-              className="search-btn"
-              onClick={() => handleSearch('person-known-for')}
-            >
-              Known For
+              Explore Movies
             </button>
           </div>
         </div>
