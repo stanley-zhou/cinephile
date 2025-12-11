@@ -1,7 +1,6 @@
 # CINEPHILE – IMDb × TMDb Movie Analytics Dashboard
 
-Welcome to CINEPHILE! CINEPHILE is a full-stack movie analytics site.  
-It combines cleaned IMDb data with TMDb market information to let users:
+Welcome to CINEPHILE! CINEPHILE is a full-stack movie analytics site which combines cleaned IMDb data with TMDb market information to let users:
 
 - Discover **top-rated** and **hidden-gem** movies
 - Explore **genres, directors, actors, and frequent co-star pairs**
