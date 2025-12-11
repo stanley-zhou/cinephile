@@ -48,8 +48,7 @@ CIS5500_Final_Project_Group15/
 │
 ├── .gitignore
 └── README.md
-
----
+```
 
 ## 🚀 Deployment and Execution
 
