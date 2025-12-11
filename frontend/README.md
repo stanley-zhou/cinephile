@@ -14,3 +14,40 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+
+
+## `frontend/README.md`
+
+```markdown
+# Frontend – CINEPHILE React App
+
+This folder contains the **React + Vite** single-page application for CINEPHILE.
+
+## Files
+
+- `src/App.jsx` – main React component:
+  - Manages `activeView`, API calls, and state
+  - Implements all major views (Discover, People, Analytics, Library)
+  - Contains the “Browse All Movies” table with search + sort + pagination
+  - Handles the movie detail modal logic
+- `src/App.css` – global styles, including:
+  - Dark cinema-themed layout
+  - Cards, grids, and responsive layout
+  - Styling for the Explore Movies table and pagination controls
+- `index.html`, `package.json`, `package-lock.json` – Vite / React setup
+
+## Dependencies
+
+See `package.json` for exact versions. Main libraries:
+
+- `react`, `react-dom`
+- `vite`
+
+## Running the Frontend Locally
+
+```bash
+cd frontend
+npm install
+npm run dev
