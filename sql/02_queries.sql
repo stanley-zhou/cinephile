@@ -52,7 +52,7 @@ WHERE m.title = $1
 ORDER BY g.genre_name;
 
 
-/* 3. Genre Rating Statistics  [COMPLEX] -----------------------------------
+/* 3. Genre Rating Statistics  --------------------------------------------
    Aggregate rating statistics across genres with a quality filter.
 ---------------------------------------------------------------------------*/
 
@@ -187,7 +187,7 @@ ORDER BY num_acting_roles DESC
 LIMIT 20;
 
 
-/* 8. Best-Rated Movie per Decade  [COMPLEX] -------------------------------
+/* 8. Best-Rated Movie per Decade  --------- -------------------------------
    Uses window functions to pick the top movie in each decade.
 ---------------------------------------------------------------------------*/
 
@@ -279,7 +279,7 @@ ORDER BY rating DESC, num_votes ASC
 LIMIT 50;
 
 
-/* 12. High-Budget, Low-Rating Flops  [COMPLEX] ---------------------------
+/* 12. High-Budget, Low-Rating Flops  ------------------------------------
    Join IMDb ratings with TMDb financials to find “big budget flops”.
 ---------------------------------------------------------------------------*/
 
@@ -310,7 +310,7 @@ ORDER BY
 LIMIT 20;
 
 
-/* 13. Highest-ROI Movies  [COMPLEX] --------------------------------------
+/* 13. Highest-ROI Movies  -----------------------------------------------
    Uses ROI = (revenue - budget) / budget on cross-dataset join.
 ---------------------------------------------------------------------------*/
 
@@ -372,7 +372,7 @@ WHERE
 GROUP BY c.country_name
 HAVING COUNT(*) >= 15
 -- Example ORDER BY choices in backend:
---   rating : ORDER BY avg_rating   DESC, total_revenue DESC
+--   ORDER BY avg_rating   DESC, total_revenue DESC
 --   revenue: ORDER BY total_revenue DESC, avg_rating   DESC
 --   roi    : ORDER BY avg_roi      DESC, avg_rating   DESC
 --   movies : ORDER BY num_movies   DESC, avg_rating   DESC
