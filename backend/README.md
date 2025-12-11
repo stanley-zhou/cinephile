@@ -70,7 +70,3 @@ Movie-level
 `GET /movies/:movieId/details – detail view for modal (genres, countries, cast, overview, etc.)`
 
 `GET /movies/explore – main “Browse All Movies” table`
-
-`search – substring match on lower-cased movie title`
-
-`sort – one of rating_desc, rating_asc, year_desc, year_asc, runtime_asc, runtime_desc, votes_asc, votes_desc`
