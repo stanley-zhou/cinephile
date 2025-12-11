@@ -16,13 +16,14 @@ app.use(express.json());
 // ============================================================================
 
 const pool = new Pool({
-  host: 'cis5500finalproject.c3ai0u00ir5v.us-east-1.rds.amazonaws.com',
-  port: 5432,
-  user: 'group15',
-  password: 'Group15OfCIS5500!',
-  database: 'imdb_db',
-  ssl: { rejectUnauthorized: false }
+  host: process.env.PGHOST,
+  port: process.env.PGPORT || 5432,
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : false,
 });
+
 
 // ============================================================================
 // Health check routes
