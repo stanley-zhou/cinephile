@@ -1,6 +1,6 @@
 # CINEPHILE – IMDb × TMDb Movie Analytics Dashboard
 
-CINEPHILE is a full-stack movie analytics site built for **CIS 5500**.  
+Welcome to CINEPHILE! CINEPHILE is a full-stack movie analytics site.  
 It combines cleaned IMDb data with TMDb market information to let users:
 
 - Discover **top-rated** and **hidden-gem** movies
