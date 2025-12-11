@@ -5,6 +5,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+require('dotenv').config(); 
 
 const app = express();
 app.use(cors());
@@ -15,13 +16,14 @@ app.use(express.json());
 // ============================================================================
 
 const pool = new Pool({
-  host: 'cis5500finalproject.c3ai0u00ir5v.us-east-1.rds.amazonaws.com',
-  port: 5432,
-  user: 'group15',
-  password: 'Group15OfCIS5500!',
-  database: 'imdb_db',
-  ssl: { rejectUnauthorized: false },
+  host: process.env.PGHOST,
+  port: process.env.PGPORT || 5432,
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : false,
 });
+
 
 // ============================================================================
 // Health check routes
@@ -773,6 +775,8 @@ app.get('/analytics/country-stats', async (req, res) => {
 // Server startup
 // ============================================================================
 
-app.listen(3001, () => {
-  console.log('Server running on http://localhost:3001');
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
