@@ -6,6 +6,12 @@ import './App.css';
 
 const API_BASE = 'https://cinephile-backend-u7zh.onrender.com'
 
+const formatVotes = (v) => {
+  return typeof v === 'number' && !Number.isNaN(v)
+    ? v.toLocaleString()
+    : 'N/A';
+};
+
 function App() {
   // Which main view/tab is active.
   const [activeView, setActiveView] = useState('popular');
@@ -296,7 +302,7 @@ function App() {
                   <span className="rating">★ {movie.rating}</span>
                 </div>
                 <div className="votes">
-                  {movie.num_votes.toLocaleString()} votes
+                  {formatVotes(movie.num_votes)} votes
                 </div>
               </div>
             ))}
@@ -407,7 +413,7 @@ function App() {
                   <div className="movie-meta">
                     <span className="rating">★ {movie.rating}</span>
                     <span className="votes">
-                      {movie.num_votes.toLocaleString()} votes
+                      {formatVotes(movie.num_votes)} votes
                     </span>
                   </div>
                 </div>
@@ -432,7 +438,7 @@ function App() {
                   <span className="rating">★ {movie.rating}</span>
                 </div>
                 <div className="votes">
-                  {movie.num_votes.toLocaleString()} votes
+                  {formatVotes(movie.num_votes)} votes
                 </div>
               </div>
             ))}
@@ -571,7 +577,7 @@ function App() {
                         <span className="rating">★ {item.rating}</span>
                       )}
                       {item.num_votes && (
-                        <span>{item.num_votes.toLocaleString()} votes</span>
+                        <span>{formatVotes(item.num_votes)} votes</span>
                       )}
                     </div>
                   </>
@@ -603,7 +609,7 @@ function App() {
                         <span className="rating">★ {item.rating}</span>
                       )}
                       {item.num_votes && (
-                        <span>{item.num_votes.toLocaleString()} votes</span>
+                        <span>{formatVotes(item.num_votes)} votes</span>
                       )}
                     </div>
                   </>
@@ -817,7 +823,7 @@ function App() {
                         </td>
                         <td>
                           {hasVotes
-                            ? movie.num_votes.toLocaleString()
+                            ? formatVotes(movie.num_votes)
                             : '-'}
                         </td>
                       </tr>
@@ -1059,7 +1065,7 @@ function App() {
                     {selectedMovie.rating && (
                       <span>
                         ★ {selectedMovie.rating} (
-                        {selectedMovie.num_votes.toLocaleString()} votes)
+                        {formatVotes(selectedMovie.num_votes)} votes)
                       </span>
                     )}
                   </div>
