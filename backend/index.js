@@ -14,9 +14,6 @@ app.use(express.json());
 // ============================================================================
 // Database connection
 // ============================================================================
-
-const { Pool } = require('pg');
-
 const pool = new Pool({
   host: process.env.PGHOST || 'cis5500finalproject.c3ai0u00ir5v.us-east-1.rds.amazonaws.com',
   port: Number(process.env.PGPORT) || 5432,
