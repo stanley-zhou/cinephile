@@ -60,7 +60,7 @@ Live site:
 - **Frequent Co-stars**: actor pairs who co-appear frequently in popular movies.
 - **High-Rated Known-For People**: people whose “known-for” titles have consistently high ratings/votes.
 
-### Financial / Country Analytics (TMDb + IMDb)
+### Financial / Country Analytics
 - **High ROI Movies**: best return on investment using TMDb revenue/budget joined to IMDb popularity filters.
 - **High Budget, Low Rating**: identify expensive underperformers.
 - **Country Spotlight**: country-level aggregates (movie count, avg rating, total revenue, avg ROI) with flexible sorting.
