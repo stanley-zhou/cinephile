@@ -12,13 +12,13 @@ Live site:
 ```
 .
 ├── sql/
-│   ├── 01_aws_schema_and_load.sql        # schema + load pipeline
-│   ├── 02_queries.sql                    # application queries (includes “complex queries”)
-│   └── 03_query_optimization.sql         # optimization script (indexes / supporting objects)
+│   ├── 01_aws_schema_and_load.sql       
+│   ├── 02_queries.sql                   
+│   └── 03_query_optimization.sql        
 │
 ├── backend/
-│   ├── index.js                          # Express server + API routes
-│   ├── __tests__/                        # Jest + Supertest tests
+│   ├── index.js                       
+│   ├── __tests__/                      
 │   ├── jest.config.js
 │   ├── package.json
 │   └── README.md
