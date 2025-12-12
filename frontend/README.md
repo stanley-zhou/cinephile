@@ -1,53 +1,60 @@
-# React + Vite
+# Frontend — CINEPHILE (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This folder contains the React frontend for the Cinephile project. It provides an interactive UI for exploring movies, viewing details, and running analytics backed by the Express + PostgreSQL API.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
-
-
-
-## `frontend/README.md`
-
-```markdown
-# Frontend – CINEPHILE React App
-
-This folder contains the **React + Vite** single-page application for CINEPHILE.
-
-## Files
-
-- `src/App.jsx` – main React component:
-  - Manages `activeView`, API calls, and state
-  - Implements all major views (Discover, People, Analytics, Library)
-  - Contains the “Browse All Movies” table with search + sort + pagination
-  - Handles the movie detail modal logic
-- `src/App.css` – global styles, including:
-  - Dark cinema-themed layout
-  - Cards, grids, and responsive layout
-  - Styling for the Explore Movies table and pagination controls
-- `index.html`, `package.json`, `package-lock.json` – Vite / React setup
-
-## Dependencies
-
-See `package.json` for exact versions. Main libraries:
-
-- `react`, `react-dom`
-- `vite`
-
-## Running the Frontend Locally
+## Run locally
 
 ```bash
 cd frontend
 npm install
 npm run dev
+```
+
+The dev server will print a local URL (commonly `http://localhost:5173`).
+
+To build for production:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Backend API
+
+The frontend calls the backend REST API for all data. Make sure the backend is running locally (or set your deployed API base URL).
+
+Typical API routes used by the UI include:
+
+- `GET /movies/explore` — Browse all movies (search + sort + pagination)
+- `GET /movies/:movieId/details` — Movie modal details (overview, cast, genres, countries, directors)
+- `GET /movies/popular/high-rated` — Popular high-rated movies
+- `GET /movies/best-per-decade` — Best movie per decade
+- `GET /movies/hidden-gems` — Hidden gem movies
+- `GET /genres/stats/ratings` — Genre rating statistics
+- `GET /directors/above-average` — Elite / above-average directors
+- `GET /actors/prolific` — Prolific actors/actresses
+- `GET /actors/frequent-pairs` — Frequent co-star pairs
+- `GET /people/high-rated-knownfor` — High-rated known-for people
+- `GET /people/:name/known-for` — Known-for titles for a person
+- `GET /analytics/high-budget-low-rating` — High-budget, low-rating underperformers
+- `GET /analytics/high-roi-movies` — Highest ROI movies
+- `GET /analytics/country-stats` — Country-level stats (rating / revenue / ROI / count)
+
+## Pages / Features (High level)
+
+The UI includes:
+- Movie discovery features (search, sort, explore table)
+- A movie details modal with richer joins (cast, directors, genres, countries, overview/poster when available)
+- Analytics views (ROI, budget vs rating, country spotlight, genre stats)
+- People/credits views (directors, prolific actors, frequent co-star pairs, known-for lists)
+
+## Deployment
+
+The frontend is deployed as a static site (built output) on Render and communicates with the deployed backend API.
+
+Live site:
+- https://cis5500-final-project-group15.onrender.com/
+
+## Notes
+- This folder contains only frontend code; no data is stored here.
+- If you change the backend URL (local vs deployed), update the API base URL in the frontend configuration accordingly.

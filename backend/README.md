@@ -1,72 +1,61 @@
+# Backend — CINEPHILE API (Express + PostgreSQL)
 
----
+This folder contains the Node.js + Express backend for the Cinephile project. It connects to a PostgreSQL database (IMDb + TMDb integrated schema) and exposes REST endpoints consumed by the React frontend.
 
-## `backend/README.md`
-
-```markdown
-# Backend – CINEPHILE API
-
-This folder contains the **Node.js + Express** backend for the CINEPHILE project.
-
-## Files
-
-- `index.js` – main entrypoint  
-  - Sets up the Express app and CORS  
-  - Creates a `pg.Pool` connection to the course AWS RDS PostgreSQL instance  
-  - Defines all REST endpoints used by the React frontend
-- `package.json` / `package-lock.json` – list of backend dependencies and scripts
-
-## Dependencies
-
-See `package.json` for exact versions. Main libraries:
-
-- `express` – HTTP server and routing
-- `cors` – Cross-origin resource sharing for the React frontend
-- `pg` – PostgreSQL client
-
-## Running the Backend Locally
+## Run locally
 
 ```bash
 cd backend
 npm install
-node index.js
+npm start
+```
 
-## Key Routes:
+The server runs on `PORT` (defaults to `3001`).
 
-Discover
+## Environment variables
 
-`GET /movies/popular/high-rated – top-rated popular films`
+Configure your database connection via:
 
-`GET /movies/best-per-decade – best movie per decade (rating + votes)`
+- `PGHOST`
+- `PGPORT`
+- `PGUSER`
+- `PGPASSWORD`
+- `PGDATABASE`
+- `PORT`
 
-`GET /movies/hidden-gems – high rating but low vote-count “hidden gems”`
+## Testing
 
-People
+```bash
+npm test
+npm run test:cov
+```
 
-`GET /directors/above-average – directors whose popular filmography beats the global avg`
+## API Overview
 
-`GET /actors/prolific – most prolific actors/actresses`
+### Health
+- `GET /` — Server health check
+- `GET /db-health` — Database connectivity check
 
-`GET /actors/frequent-pairs – actor pairs who frequently co-star`
+### Movies
+- `GET /movies/popular/high-rated` — Popular, high-rated movies
+- `GET /movies/:title/genres` — Genres for an exact movie title
+- `GET /movies/best-per-decade` — Best popular movie per decade
+- `GET /movies/genre/drama-romance` — Movies tagged as both Drama and Romance
+- `GET /movies/hidden-gems` — High-rated, lower-vote “hidden gem” movies
+- `GET /movies/:movieId/details` — Detailed movie info for the modal (overview, genres, cast, directors, countries)
+- `GET /movies/explore` — Paginated browse endpoint (search + sort + pagination)
 
-`GET /people/high-rated-knownfor – people with high-rated “known for” portfolios`
+### Genres & People
+- `GET /genres/stats/ratings` — Genre-level rating statistics (popular movies)
+- `GET /directors/above-average` — Directors whose popular-movie average beats global average
+- `GET /actors/prolific` — Most prolific actors/actresses
+- `GET /actors/frequent-pairs` — Frequent co-star pairs in popular movies
+- `GET /people/high-rated-knownfor` — People with consistently high-rated “known-for” portfolios
+- `GET /people/:name/known-for` — Known-for movies for a person name
 
-`GET /people/:name/known-for – known-for filmography for a given person name`
+### Analytics (Budget / Revenue / Country)
+- `GET /analytics/high-budget-low-rating` — High-budget, low-rating underperformers
+- `GET /analytics/high-roi-movies` — Highest ROI movies (revenue vs budget)
+- `GET /analytics/country-stats` — Country-level aggregates (movies, rating, revenue, ROI)
 
-Analytics
-
-`GET /genres/stats/ratings – average rating & count per genre`
-
-`GET /analytics/high-budget-low-rating – high-budget movies with low IMDb ratings`
-
-`GET /analytics/high-roi-movies – best ROI movies using budget & revenue`
-
-`GET /analytics/country-stats?sort=rating|revenue|roi|movies – production country spotlight`
-
-Movie-level
-
-`GET /movies/:title/genres – all genres for a given movie title`
-
-`GET /movies/:movieId/details – detail view for modal (genres, countries, cast, overview, etc.)`
-
-`GET /movies/explore – main “Browse All Movies” table`
+---

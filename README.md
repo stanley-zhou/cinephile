@@ -1,95 +1,117 @@
-# CINEPHILE – IMDb × TMDb Movie Analytics Dashboard
+# CINEPHILE — Movie Discovery & Analytics (IMDb + TMDb)
 
-Welcome to CINEPHILE! CINEPHILE is a full-stack movie analytics site which combines cleaned IMDb data with TMDb market information to let users:
+Cinephile is a full-stack web app that combines **IMDb title/people/ratings** with **TMDb market + metadata** to support movie discovery (search/sort/browse), rich movie detail pages (cast/directors/genres/countries/overview), and analytics views (ROI, country stats, elite directors, etc.).
 
-- Discover **top-rated** and **hidden-gem** movies
-- Explore **genres, directors, actors, and frequent co-star pairs**
-- Analyze **box office performance**, **high-budget flops**, and **highest-ROI movies**
-- Browse a **searchable + sortable movie library** with rich, on-demand details
-
-The project has three main pieces:
-
-1. **PostgreSQL on AWS RDS** – final schema, constraints, and all queries  
-2. **Node.js + Express backend** (`backend/`) – REST API powered by SQL  
-3. **React (Vite) frontend** (`frontend/`) – the CINEPHILE UI
+Live site:
+- https://cis5500-final-project-group15.onrender.com/
 
 ---
 
-## Project Structure
+## Repository Structure
 
-```text
-CIS5500_Final_Project_Group15/
+```
+.
+├── sql/
+│   ├── 01_aws_schema_and_load.sql        # schema + load pipeline
+│   ├── 02_queries.sql                    # application queries (includes “complex queries”)
+│   └── 03_query_optimization.sql         # optimization script (indexes / supporting objects)
+│
 ├── backend/
-│   ├── index.js                 # Express server + all API routes
-│   ├── package.json             # Backend dependencies/scripts
-│   └── package-lock.json
+│   ├── index.js                          # Express server + API routes
+│   ├── __tests__/                        # Jest + Supertest tests
+│   ├── jest.config.js
+│   ├── package.json
+│   └── README.md
 │
 ├── frontend/
-│   ├── index.html
-│   ├── package.json             # Frontend dependencies/scripts (Vite + React)
-│   ├── package-lock.json
-│   └── src/
-│       ├── App.jsx              # Main React SPA (all views + routing logic)
-│       └── App.css              # Global styling & Explore table styles
-│
-├── docs/
-│   ├── ER_diagram.drawio        # ER diagram source
-│   ├── ER_diagram.drawio.pdf    # ER diagram (PDF)
-│   ├── normalization_proof.tex  # 3NF / BCNF proof (LaTeX)
-│   └── normalization_proof.pdf  # Normalization proof (PDF)
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   ├── App.css
+│   │   └── index.css
+│   ├── package.json
+│   └── README.md
 │
 ├── notebooks/
-│   ├── 01_imdb_data_preprocessing.ipynb   # IMDb preprocessing pipeline
-│   └── 02_tmdb_data_preprocessing.ipynb   # TMDb + MarketInfo preprocessing
+│   ├── 01_imdb_data_preprocessing.ipynb
+│   └── 02_tmdb_data_preprocessing.ipynb
 │
-├── sql/
-│   ├── 01_aws_schema_and_load.sql         # Data loading scripts
-│   └── 02_queries.sql                     # Saved SQL queries for the app
-│
-├── .gitignore
-└── README.md
+└── docs/
+    ├── ER_diagram.drawio.pdf
+    └── normalization_proof.tex
 ```
-
-## 🚀 Deployment and Execution
-
-### 💻 Current Architecture
-
-* **Backend**
-    * Node.js + Express app deployed as a **Render Web Service**.
-    * Public base URL: `https://cinephile-backend-u7zh.onrender.com`
-    * Connects to a shared **AWS RDS PostgreSQL** database (`imdb_db`).
-* **Frontend**
-    * React + Vite application located in `frontend/`.
-    * The frontend is served locally during development and connects to the deployed backend for data access.
-
-> **Note:** The backend service is configured as a **Web Service** on Render. Currently, only the backend is deployed; the frontend assets are served locally via Vite.
 
 ---
 
-### 🟢 Suggested Execution Method: Local Frontend + Deployed Backend
+## Key Features (Clear, UI-facing)
 
-This configuration is recommended for development, testing, and interaction with the live database.
+### Movie Discovery
+- **Explore Movies**: search by title, sort (rating/votes/year/runtime), paginate results, and view genres per movie.
+- **Hidden Gems**: find high-rated movies with relatively low vote counts.
+- **Best Movie per Decade**: top popular movie for each decade using window ranking.
 
-1.  **Clone the repository and install frontend dependencies**
+### Movie Details (Modal)
+- **One-click Details**: overview + poster (TMDb), plus **genres, directors, countries**, and **top cast** (derived from roles).
 
-    ```bash
-    git clone [https://github.com/stanley-zhou/CIS5500_Final_Project_Group15.git](https://github.com/stanley-zhou/CIS5500_Final_Project_Group15.git)
-    cd CIS5500_Final_Project_Group15/frontend
-    npm install
-    ```
+### People Insights
+- **Elite Directors**: directors whose average rating on popular movies exceeds the global average.
+- **Prolific Actors**: actors/actresses with the highest number of acting roles.
+- **Frequent Co-stars**: actor pairs who co-appear frequently in popular movies.
+- **High-Rated Known-For People**: people whose “known-for” titles have consistently high ratings/votes.
 
-2.  **Configure API Base URL**
+### Financial / Country Analytics (TMDb + IMDb)
+- **High ROI Movies**: best return on investment using TMDb revenue/budget joined to IMDb popularity filters.
+- **High Budget, Low Rating**: identify expensive underperformers.
+- **Country Spotlight**: country-level aggregates (movie count, avg rating, total revenue, avg ROI) with flexible sorting.
 
-    Ensure the frontend is pointing to the deployed backend. In `frontend/src/App.jsx`, verify:
+---
 
-    ```javascript
-    const API_BASE = '[https://cinephile-backend-u7zh.onrender.com](https://cinephile-backend-u7zh.onrender.com)'
-    ```
+## How to Use
 
-3.  **Start the Frontend Application**
+### Option A — Use the deployed app (no AWS setup needed)
+Just open:
+- https://cis5500-final-project-group15.onrender.com/
 
-    ```bash
-    npm run dev
-    ```
+Everything is already deployed (frontend + backend). You do **not** need AWS credentials or database access for usage.
 
-    Open the Vite URL printed in the terminal (typically `http://localhost:5173`) in a browser. All data will be fetched from the deployed backend on Render.
+### Option B — Run locally (you DO need access to the AWS RDS database)
+If you want to run the backend locally against the AWS-hosted Postgres database, your machine must be able to connect to the RDS instance.
+
+#### 1) Database access requirement (AWS RDS)
+- Ensure the RDS **security group allows inbound Postgres (5432)** from your IP address.
+- You will need the DB host/user/password/dbname (stored in backend `.env`).
+
+#### 2) Backend
+```bash
+cd backend
+npm install
+npm start
+```
+
+Backend environment variables (in `backend/.env`):
+- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PORT`
+
+Run tests + coverage:
+```bash
+npm test
+npm run test:cov
+```
+
+#### 3) Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+If your frontend is configured to call the deployed backend by default, update the API base URL (if needed) to point to:
+- local backend: `http://localhost:3001`
+- deployed backend: `https://cis5500-final-project-group15.onrender.com`
+
+---
+
+## Documentation
+- ER diagram: `docs/ER_diagram.drawio.pdf`
+- Normalization proof: `docs/normalization_proof.tex`
+- Data preprocessing notebooks: `notebooks/`
+- SQL schema + queries + optimizations: `sql/`
