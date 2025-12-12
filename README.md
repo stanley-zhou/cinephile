@@ -4,7 +4,7 @@ Cinephile is a full-stack web app that combines **IMDb title/people/ratings** wi
 
 Live site:
 - https://cis5500-final-project-group15.onrender.com/
-* The live site depends on our AWS RDS PostgreSQL instance. If the RDS security group is not open/allowing connections (or the database is paused/unreachable), the deployed backend cannot query the database and the live site may fail to load data or return errors.
+(The live site depends on our AWS RDS PostgreSQL instance. If the RDS security group is not open/allowing connections (or the database is paused/unreachable), the deployed backend cannot query the database and the live site may fail to load data or return errors.)
 
 ---
 
