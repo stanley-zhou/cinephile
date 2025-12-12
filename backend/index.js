@@ -444,31 +444,27 @@ app.get('/directors/above-average', async (req, res) => {
   try {
     const query = `
       WITH global_avg AS (
-          SELECT AVG(rating) AS avg_rating
-          FROM Movies
-          WHERE num_votes >= 10000
+        SELECT AVG(rating) AS avg_rating
+        FROM movies
+        WHERE num_votes >= 10000
       )
       SELECT
-          p.person_id,
-          p.name,
-          COUNT(*)      AS num_directed_popular_movies,
-          AVG(m.rating) AS director_avg_rating
-      FROM People AS p
-      JOIN Roles  AS r ON p.person_id = r.person_id
-      JOIN Movies AS m ON r.movie_id   = m.movie_id
+        p.person_id,
+        p.name,
+        COUNT(*)      AS num_directed_popular_movies,
+        AVG(m.rating) AS director_avg_rating
+      FROM movies m
+      JOIN roles  r ON r.movie_id = m.movie_id
+      JOIN people p ON p.person_id = r.person_id
       WHERE r.role = 'director'
         AND m.num_votes >= 10000
       GROUP BY p.person_id, p.name
-      HAVING
-          COUNT(*) >= 5
-          AND AVG(m.rating) >= (
-              SELECT avg_rating + 0.5
-              FROM global_avg
-          )
+      HAVING COUNT(*) >= 5
+        AND AVG(m.rating) >= (SELECT avg_rating FROM global_avg)
       ORDER BY
-          director_avg_rating DESC,
-          num_directed_popular_movies DESC,
-          p.name;
+        director_avg_rating DESC,
+        num_directed_popular_movies DESC,
+        p.name;
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -511,35 +507,40 @@ app.get('/actors/prolific', async (req, res) => {
 app.get('/actors/frequent-pairs', async (req, res) => {
   try {
     const query = `
+      WITH popular_movies AS (
+        SELECT movie_id
+        FROM movies
+        WHERE num_votes >= 50000
+      ),
+      movie_cast AS (
+        SELECT pm.movie_id, r.person_id
+        FROM popular_movies pm
+        JOIN roles r
+          ON r.movie_id = pm.movie_id
+        AND r.role IN ('actor', 'actress')
+      ),
+      pair_counts AS (
+        SELECT
+          c1.person_id AS actor1_id,
+          c2.person_id AS actor2_id,
+          COUNT(*) AS num_movies_together
+        FROM movie_cast c1
+        JOIN movie_cast c2
+          ON c1.movie_id = c2.movie_id
+        AND c1.person_id < c2.person_id
+        GROUP BY c1.person_id, c2.person_id
+        HAVING COUNT(*) >= 3
+        ORDER BY num_movies_together DESC
+        LIMIT 10
+      )
       SELECT
-          p1.person_id AS actor1_id,
-          p1.name      AS actor1_name,
-          p2.person_id AS actor2_id,
-          p2.name      AS actor2_name,
-          COUNT(*)     AS num_movies_together
-      FROM Roles AS r1
-      JOIN Roles AS r2
-        ON r1.movie_id   = r2.movie_id
-       AND r1.person_id  < r2.person_id
-      JOIN Movies AS m
-        ON r1.movie_id   = m.movie_id
-      JOIN People AS p1
-        ON r1.person_id  = p1.person_id
-      JOIN People AS p2
-        ON r2.person_id  = p2.person_id
-      WHERE r1.role IN ('actor', 'actress')
-        AND r2.role IN ('actor', 'actress')
-        AND m.num_votes >= 50000
-      GROUP BY
-          p1.person_id, p1.name,
-          p2.person_id, p2.name
-      HAVING
-          COUNT(*) >= 3
-      ORDER BY
-          num_movies_together DESC,
-          actor1_name,
-          actor2_name
-      LIMIT 10;
+        p1.person_id AS actor1_id, p1.name AS actor1_name,
+        p2.person_id AS actor2_id, p2.name AS actor2_name,
+        pc.num_movies_together
+      FROM pair_counts pc
+      JOIN people p1 ON p1.person_id = pc.actor1_id
+      JOIN people p2 ON p2.person_id = pc.actor2_id
+      ORDER BY pc.num_movies_together DESC, actor1_name, actor2_name;
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -554,33 +555,21 @@ app.get('/actors/frequent-pairs', async (req, res) => {
  * People whose known-for movies are consistently highly rated.
  */
 app.get('/people/high-rated-knownfor', async (req, res) => {
-  const sql = `
-    WITH person_stats AS (
+    const sql = `
       SELECT
         p.person_id,
         p.name,
-        COUNT(*) AS num_known_for,
-        AVG(m.rating) AS avg_rating,
-        AVG(m.num_votes) AS avg_votes
-      FROM people p
-      JOIN person_known_for pk ON pk.person_id = p.person_id
-      JOIN movies m ON m.movie_id = pk.movie_id
-      GROUP BY p.person_id, p.name
-    )
-    SELECT
-      person_id,
-      name,
-      num_known_for,
-      avg_rating,
-      avg_votes
-    FROM person_stats
-    WHERE num_known_for >= 2
-      AND avg_rating >= 8.5
-      AND avg_votes >= 10000
-    ORDER BY avg_rating DESC, avg_votes DESC, name
-    LIMIT 20;
-  `;
-
+        s.num_known_for,
+        s.avg_rating,
+        s.avg_votes
+      FROM person_known_for_stats s
+      JOIN people p ON p.person_id = s.person_id
+      WHERE s.num_known_for >= 2
+        AND s.avg_rating >= 8.5
+        AND s.avg_votes >= 10000
+      ORDER BY s.avg_rating DESC, s.avg_votes DESC, p.name
+      LIMIT 20;
+    `;
   try {
     const result = await pool.query(sql);
     res.json(result.rows);
@@ -732,29 +721,40 @@ app.get('/analytics/country-stats', async (req, res) => {
   }
 
   const sql = `
+    WITH popular_movies AS (
+      SELECT movie_id, rating
+      FROM movies
+      WHERE num_votes >= 20000
+    ),
+    m_join AS (
+      SELECT
+        pm.movie_id,
+        pm.rating,
+        mi.tmdb_id,
+        mi.revenue,
+        mi.budget
+      FROM popular_movies pm
+      JOIN market_info mi
+        ON mi.imdb_id = pm.movie_id
+      WHERE mi.revenue IS NOT NULL
+    )
     SELECT
       c.country_name,
       COUNT(*) AS num_movies,
-      AVG(m.rating) AS avg_rating,
-      SUM(mi.revenue) AS total_revenue,
+      AVG(mj.rating) AS avg_rating,
+      SUM(mj.revenue) AS total_revenue,
       AVG(
         CASE
-          WHEN mi.budget IS NOT NULL AND mi.budget > 0
-               AND mi.revenue IS NOT NULL
-          THEN mi.revenue::numeric / mi.budget
+          WHEN mj.budget IS NOT NULL AND mj.budget > 0
+          THEN mj.revenue::numeric / mj.budget
           ELSE NULL
         END
       ) AS avg_roi
-    FROM movies m
-    JOIN market_info mi
-      ON mi.imdb_id = m.movie_id
+    FROM m_join mj
     JOIN movie_production_countries mpc
-      ON mpc.tmdb_id = mi.tmdb_id
+      ON mpc.tmdb_id = mj.tmdb_id
     JOIN countries c
       ON c.country_name = mpc.country_name
-    WHERE
-      m.num_votes >= 20000
-      AND mi.revenue IS NOT NULL
     GROUP BY c.country_name
     HAVING COUNT(*) >= 15
     ORDER BY ${orderBy}
@@ -775,8 +775,14 @@ app.get('/analytics/country-stats', async (req, res) => {
 // ============================================================================
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
+
 
 
