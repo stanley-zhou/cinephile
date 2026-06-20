@@ -117,3 +117,6 @@ If your frontend is configured to call the deployed backend by default, update t
 - Normalization proof: `docs/normalization_proof.tex`
 - Data preprocessing notebooks: `notebooks/`
 - SQL schema + queries + optimizations: `sql/`
+
+## Group Member
+Yuxiang (Stanley) Zhou, Chengrong Yu, Shen Li, William Wang
