@@ -118,5 +118,5 @@ If your frontend is configured to call the deployed backend by default, update t
 - Data preprocessing notebooks: `notebooks/`
 - SQL schema + queries + optimizations: `sql/`
 
-## Group Member
+## Group Members
 Yuxiang (Stanley) Zhou, Chengrong Yu, Shen Li, William Wang
